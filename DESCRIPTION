@@ -1,0 +1,32 @@
+Package: NationalModelUng2009
+Title: National Stand-Volume Models for Canadian Tree Species (Ung et al. 2009)
+Version: 0.1.0
+Authors@R: c(
+    person("Derek Felix", "Sattler", email = "derek.sattler@nrcan-rncan.gc.ca", role = c("aut", "cre")),
+    person("His Majesty the King in Right of Canada, as represented by the Minister of Natural Resources", role = c("cph", "fnd")))
+Description: Implements the two national growth-and-yield models of Ung, Bernier,
+    Guo and Lambert (2009) <doi:10.5558/tfc85057-1>. Given stand age, annual
+    degree-days above 0 C and mean annual precipitation, 'Nat1' predicts dominant
+    height, basal area and gross merchantable volume, and 'Nat2' predicts volume
+    directly, for 25 Canadian commercial tree species. The package validates
+    inputs, warns when a prediction falls outside the data the models were fitted
+    to or is very sensitive to the climate inputs, and can look up climate
+    values with the 'climr' package.
+License: MIT + file LICENSE
+URL: https://github.com/dfelixsattler/NationalModelUng2009
+BugReports: https://github.com/dfelixsattler/NationalModelUng2009/issues
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 8.0.0
+Depends:
+    R (>= 4.0)
+Imports:
+    graphics,
+    grDevices,
+    stats
+Suggests:
+    climr,
+    testthat (>= 3.0.0)
+Remotes: bcgov/climr
+Config/testthat/edition: 3
+LazyData: true

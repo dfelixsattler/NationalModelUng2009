@@ -1,0 +1,6 @@
+^data-raw$
+^\.Rproj\.user$
+^\.vscode$
+^LICENSE\.md$
+^\.github$
+^.*\.Rproj$
