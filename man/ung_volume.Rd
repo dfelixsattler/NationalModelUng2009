@@ -32,7 +32,7 @@ is used (column \code{map_mean} of \link{ung_envelope}).}
 \item{model}{One of \code{"both"} (default), \code{"Nat1"} or \code{"Nat2"}.}
 
 \item{nat1_bias_correction}{Logical. \code{TRUE} multiplies Nat1 volume by the
-approximate correction described in \emph{Nat1 volume is biased low}. Default
+approximate correction described in \emph{Why Nat1 volume needs a correction}. Default
 \code{FALSE} (the published model).}
 
 \item{warn}{Logical. Set to \code{FALSE} to skip the warning and the message about
@@ -76,7 +76,7 @@ For a single volume curve, for example for the Carbon Budget Model, use
 \strong{Nat2} (the default of \code{\link[=ung_yield_table]{ung_yield_table()}}). It predicts average volume
 directly with its own correction factor, and its parameters are less affected
 by rounding (see \emph{Parameters are rounded}). Use \strong{Nat1} when you also need
-height and basal area, and read \emph{Nat1 volume is biased low}.
+height and basal area, and read \emph{Why Nat1 volume needs a correction}.
 }
 
 \section{Climate inputs}{
@@ -142,29 +142,54 @@ is important: using the corrected height and basal area instead would raise
 volume by \code{CDh^v31 * CDg^v32}, about a third for black spruce.
 }
 
-\section{Nat1 volume is biased low}{
+\section{Why Nat1 volume needs a correction}{
 
-Nat1's volume correction factor (\code{CDv}, about 1.001) only covers the scatter
-of the volume equation when height and basal area are \emph{measured}. In Nat1
-they are \emph{predicted}, and their much larger scatter (basal-area factors of
-1.1 to 1.6) is carried into volume without any correction. Uncorrected Nat1
-volume therefore estimates something closer to the middle stand than the
-average stand, and is biased low. Across the 25 species, at age 80 and each
-species' average climate, Nat2 volume is a median of about 20 \% higher than
-uncorrected Nat1 volume.
+Uncorrected Nat1 volume is biased low. Step by step:
+\enumerate{
+\item The models predict the logarithm of volume. Taking \code{exp()} of a predicted
+log gives the middle (median) stand, not the average stand (assuming the
+errors on the log scale are roughly symmetric, as in a normal
+distribution).
+\item A Duan factor is multiplied on to move the median up to the average. Its
+size should reflect \emph{all} the scatter of \code{ln(V)} at a given age and
+climate.
+\item In Nat1, that scatter has three sources: the scatter of the volume
+equation itself, the error in predicted \code{ln(H)} (times \code{v31}) and the
+error in predicted \code{ln(G)} (times \code{v32}).
+\item Nat1's volume factor (\code{CDv}, about 1.001) was estimated with \emph{measured} H
+and G, where volume is almost exactly determined. It covers only the
+first source. The errors carried over from predicted H and G, mostly from
+G (whose own factor \code{CDg} is 1.1 to 1.6), are not accounted for. This is
+why uncorrected Nat1 volume is biased low.
+\item Nat2 has a single equation from age and climate straight to volume. Its
+one residual already contains all the scatter, so its factor (\code{CDv2},
+1.15 for black spruce) accounts for everything and needs no correction.
+\item For Nat1, the missing scatter can be estimated. Each Duan factor gives the
+variance of its log errors, about \code{2 * ln(CD)}. The extra variance that H
+and G add to \code{ln(V)} is then
+\code{s2 = v31^2 * 2 * ln(CDh) + v32^2 * 2 * ln(CDg)}, and a second-order
+Taylor-series expansion gives the missing factor, about \code{1 + s2 / 2}.
+\code{nat1_bias_correction = TRUE} multiplies Nat1 volume by this factor, in
+addition to \code{CDv}.
+}
 
-Set \code{nat1_bias_correction = TRUE} to multiply Nat1 volume by a second-order
-Taylor-series correction, \code{1 + s2 / 2}. Here
-\code{s2 = v31^2 * 2 * ln(CDh) + v32^2 * 2 * ln(CDg)} is the variance that
-height and basal-area errors add to \code{ln(V)}. Each variance is estimated from
-its Duan factor (assuming the log-scale errors are roughly normal), and the
-height and basal-area errors are assumed to be \strong{uncorrelated}, because the
-authors did not publish their correlation. The correction ranges from about
-1.05 to 1.46 among species (1.29 for black spruce). With it, the median gap
-between Nat2 and Nat1 at age 80 shrinks from about 20 \% to under 1 \%, which
-supports this explanation of the gap. It was added by the package author and is not
-part of the published model, so it is off by default. Height and basal area
-are not changed by it.
+The correction assumes that (a) the errors in H and G are \strong{uncorrelated}
+(the authors did not publish their correlation), (b) the log-scale errors
+are roughly normal, and (c) these errors are independent of the volume
+equation's own scatter. It ranges from about 1.05 to 1.46 among species
+(1.29 for black spruce).
+
+\strong{Evidence.} Across the 25 species, at age 80 and each species' average
+climate, Nat2 volume is a median of about 20 \% higher than uncorrected Nat1
+volume. With the correction, the median gap shrinks to under 1 \%.
+
+\strong{Why it matters.} Tools such as the Carbon Budget Model add volume (and
+carbon) over many stands, so they need the average stand, not the median.
+
+\strong{Why it is off by default.} The correction was added by the package author
+and is not part of the published model, and it rests on the assumptions
+above. Nat2, the recommended model, does not need it. Height (\code{H_Nat1}) and
+basal area (\code{G_Nat1}) are not changed by it.
 }
 
 \section{Parameters are rounded to 4 decimal places}{

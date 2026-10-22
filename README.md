@@ -75,18 +75,48 @@ A step-by-step worked example is in the vignette:
 directly.
 
 Nat1 predicts H and G first and then puts these predictions into its volume
-equation. That equation was fitted with *measured* H and G, so its small
-correction factor does not allow for the much larger error in *predicted* H and
-G. As a result, Nat1 volume as published is **biased low**: across the 25
-species, at age 80 and each species' average climate, Nat2 is a median of
-about **20 % higher** than Nat1.
+equation. As published, Nat1 volume is **biased low**: across the 25 species,
+at age 80 and each species' average climate, Nat2 is a median of about
+**20 % higher** than Nat1. Nat1 is still available, with an optional
+correction (explained next).
 
-`nat1_bias_correction = TRUE` multiplies Nat1 volume by a second-order Taylor
-series correction (between 1.05 and 1.46 depending on the species). It assumes
-the errors in H and G are uncorrelated, because the authors did not publish
-their correlation. With the correction, the median gap between Nat2 and Nat1
-falls to under 1 %. This correction was added by this package; it is not part of
-the published model, so it is off by default.
+### Why Nat1 volume needs a correction
+
+1. The models predict the *logarithm* of volume. Taking `exp()` of a predicted
+   log gives the middle (median) stand, not the average stand (assuming the
+   errors on the log scale are roughly symmetric, as in a normal distribution).
+2. A Duan factor (explained below) is multiplied on to move the median up to
+   the average. Its size should reflect *all* the scatter of ln(V) at a given
+   age and climate.
+3. In Nat1 that scatter has three sources: the scatter of the volume equation
+   itself, the error in predicted ln(H) (times `v31`) and the error in
+   predicted ln(G) (times `v32`).
+4. Nat1's volume factor (`CDv`, about 1.001) was estimated with *measured* H and
+   G, where volume is almost exactly determined. It covers only the first
+   source. The errors carried over from predicted H and G, mostly from G, are
+   not accounted for. This is why uncorrected Nat1 volume is biased low.
+5. Nat2 has a single equation from age and climate straight to volume. Its one
+   residual already contains all the scatter, so its factor (`CDv2`, 1.15 for
+   black spruce) accounts for everything and needs no correction.
+6. For Nat1, the missing scatter can be estimated. Each Duan factor gives the
+   variance of its log errors, about `2 * ln(CD)`. The extra variance that H
+   and G add to ln(V) is
+   `s2 = v31^2 * 2 * ln(CDh) + v32^2 * 2 * ln(CDg)`, and a second-order Taylor
+   series expansion gives the missing factor, about `1 + s2 / 2`.
+   `nat1_bias_correction = TRUE` multiplies Nat1 volume by this factor, in
+   addition to `CDv`.
+
+The correction assumes that the errors in H and G are **uncorrelated** (the
+authors did not publish their correlation), that the log-scale errors are
+roughly normal, and that they are independent of the volume equation's own
+scatter. It ranges from 1.05 to 1.46 depending on the species (1.29 for black
+spruce). With it, the median gap between Nat2 and Nat1 falls from about 20 % to
+under 1 %, which supports this explanation.
+
+This matters for the Carbon Budget Model and similar tools, which add volume
+(and carbon) over many stands and therefore need the average stand, not the
+median. The correction was added by this package and is not part of the
+published model, so it is off by default.
 
 ### How Nat1 links height and basal area to volume
 
