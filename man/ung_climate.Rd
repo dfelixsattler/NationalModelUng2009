@@ -26,19 +26,28 @@ the \href{https://github.com/bcgov/climr}{climr} package, so the result can be
 passed straight to \code{\link[=ung_volume]{ung_volume()}}.
 }
 \details{
-\code{climr} does not provide \code{DD_0} directly. \code{dd0} is derived exactly from
-quantities it does provide, using the identity
-\code{sum(T - 18) = DD18 - DDsub18} over a 365-day year:
-\code{DD0 = (DD18 - DDsub18) + 365 * 18 + DDsub0}.
+\strong{Naming trap:} in \code{climr} and ClimateNA, \code{DD_0} / \code{DDsub0} is degree-days
+\emph{below} 0 degrees C (a winter-cold measure). It is \strong{not} the \code{dd0}
+(degree-days \emph{above} 0 degrees C) the models need, and neither package
+provides the latter directly. \code{dd0} is therefore derived from variables
+\code{climr} does provide, using \code{sum(T - 18) = DD18 - DDsub18} over a 365-day
+year and \code{DD>0 = sum(T) + DD<0}:
+\code{dd0 = (DD18 - DDsub18) + 365 * 18 + DDsub0}.
+The identity is exact for daily temperatures, but \code{climr} computes each
+degree-day variable from monthly mean temperature with separate empirical
+regressions, so the derived \code{dd0} is an approximation whose error has not
+been validated against the degree-days used to fit the models.
 }
 \section{Differences from the paper's climate}{
 
-Ung et al. (2009) fitted the models to interpolated normals with
-inter-annual variability restored (McKenney et al. 2001), which are not
-identical to the \code{climr} 1981-2010 normals. Expect small differences in \code{dd0}
-and \code{map} which, because the models can be sensitive to climate (see
-\code{\link[=ung_sensitivity]{ung_sensitivity()}}), can matter. If you have ClimateNA or ClimateBC output,
-use its \code{DD_0} and \code{MAP} columns directly as \code{dd0} and \code{map} instead.
+Ung et al. (2009) fitted the models to interpolated climate with
+inter-annual variability restored (McKenney et al. 2001); this is not the
+same product or period as the \code{climr} 1981-2010 normals. Expect differences
+in \code{dd0} and \code{map} which, because the models can be sensitive to climate (see
+\code{\link[=ung_sensitivity]{ung_sensitivity()}}), can matter. ClimateNA/ClimateBC output cannot simply be
+substituted: their \code{DD_0} is degree-days below 0 degrees C. Use
+\code{\link[=ung_climate_from_climatena]{ung_climate_from_climatena()}}, which derives \code{dd0} from \code{DD18}, \code{DD_18} and
+\code{DD_0}.
 Do not use future-climate projections: the authors state the climate terms
 are descriptive only and not suitable for climate-change impact projection.
 }
@@ -58,5 +67,6 @@ ung_volume("black spruce", age = 80, dd0 = clim$dd0, map = clim$map)
 }
 }
 \seealso{
-\code{\link[=ung_volume]{ung_volume()}}
+\code{\link[=ung_volume]{ung_volume()}}, \code{\link[=ung_climate_from_climatena]{ung_climate_from_climatena()}} for a local
+ClimateNA or ClimateBC installation
 }

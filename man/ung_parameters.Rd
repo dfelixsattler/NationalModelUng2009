@@ -26,10 +26,12 @@ The Forestry Chronicle 85(1): 57-64. \doi{10.5558/tfc85057-1}
 ung_parameters
 }
 \description{
-One row per species. Parameters were transcribed from the CTAE-derived R
-implementation of Ung et al. (2009) and checked only against the published
-fitting-data means for black spruce, jack pine and trembling aspen (see the
-package tests); the parameter tables of the paper were not available in
-machine-readable form.
+One row per species. Nat1 parameters were transcribed from the CTAE-derived R
+implementation of Ung et al. (2009) and verified cell by cell against four
+files from the model developers (\code{Parms.csv}, \code{Ung2009_NatOneWide.csv},
+\code{NatOneWide.csv}, \code{Fit.csv}). Nat2 parameters were verified against sheet \code{V}
+of the developers' spreadsheet (all 25 species identical). The height and
+basal-area sheets of that spreadsheet hold slightly different, unpublished
+individual-equation estimates; they are \strong{not} used here.
 }
 \keyword{datasets}

@@ -7,8 +7,8 @@
 ung_volume(
   species,
   age,
-  dd0,
-  map,
+  dd0 = NULL,
+  map = NULL,
   model = c("both", "Nat1", "Nat2"),
   warn = TRUE
 )
@@ -19,13 +19,18 @@ ung_volume(
 
 \item{age}{Numeric vector. Stand age in years (> 0).}
 
-\item{dd0}{Numeric vector. Annual degree-days above 0 degrees C (not DD5).}
+\item{dd0}{Numeric vector. Annual degree-days above 0 degrees C (not DD5).
+If \code{NULL} (default), the species mean of the fitting plots is used
+(\code{dd0_mean} in \link{ung_envelope}); see \emph{Species-mean climate}.}
 
-\item{map}{Numeric vector. Mean annual precipitation in mm.}
+\item{map}{Numeric vector. Mean annual precipitation in mm. If \code{NULL}
+(default), the species mean of the fitting plots is used (\code{map_mean} in
+\link{ung_envelope}).}
 
 \item{model}{One of \code{"both"} (default), \code{"Nat1"} or \code{"Nat2"}.}
 
-\item{warn}{Logical. Set to \code{FALSE} to skip all diagnostic warnings.}
+\item{warn}{Logical. Set to \code{FALSE} to skip all diagnostic warnings and the
+message about default climate.}
 }
 \value{
 A data.frame of class \code{ung_volume} with one row per input row:
@@ -56,17 +61,39 @@ again back-transformed with a Duan correction factor.
 Arguments are recycled to a common length; lengths must be 1 or
 equal to the longest argument.
 }
+\section{Intended use and time horizon}{
+
+The authors state (Ung et al. 2009, Discussion): "the models developed here
+were designed for increment predictions over very short (< 10 years)
+intervals, as requested within the context of the CNFI. The absence of
+safeguards, such as an empirical adjustment to the number of merchantable
+stems per hectare, means that the user who may want to use these models for
+longer-term projections should use caution."
+
+(CNFI is the Canadian National Forest Inventory.) A yield curve over many
+decades, such as the one drawn by \code{plot()}, is a longer-term projection in
+this sense. \code{\link[=ung_volume]{ung_volume()}} therefore warns (class \code{ung2009_warning_horizon})
+when one call predicts the same species and climate over ages that span more
+than 10 years.
+}
+
 \section{Climate inputs}{
 
 \itemize{
-\item \code{dd0} is \strong{annual degree-days above 0 degrees C} (ClimateNA/ClimateBC
-variable \code{DD_0}). It is \emph{not} growing degree-days above 5 degrees C
-(\code{DD5}); using \code{DD5} will silently give wrong answers.
-\item \code{map} is \strong{mean annual precipitation in mm} (\code{MAP}).
-\item The models were fitted to interpolated climate normals with inter-annual
-variability restored (McKenney et al. 2001). Use long-term averages for the
-stand location, not a single year's weather. \code{\link[=ung_climate]{ung_climate()}} can look up
-normals with the \code{climr} package.
+\item \code{dd0} is \strong{annual degree-days above 0 degrees C} (the paper's \code{D0}). It is
+\emph{not} growing degree-days above 5 degrees C (\code{DD5}), and it is \emph{not}
+ClimateNA/ClimateBC/climr \code{DD_0}, which is degree-days \emph{below} 0 degrees C.
+Using either gives silently wrong answers.
+\item \code{map} is \strong{annual precipitation in mm} (\code{MAP}; the paper's \code{P}).
+\item Supply \strong{one value of each per stand}, held constant over the stand's age:
+the paper attached a single plot-level \code{D0} and \code{P} to every plot and, when
+predicting increments, used the same values at both measurement dates. They
+are per-year quantities (degree-days per year, mm per year), not a time
+series. The paper derived them from interpolated climate normals "to which
+inter-annual variability has been restored" (McKenney et al. 2001) and does
+not state the averaging period, so use values representative of the stand
+location over several decades (e.g. 1981-2010 normals, which is what
+\code{\link[=ung_climate]{ung_climate()}} returns) and report which you used.
 }
 }
 
@@ -77,10 +104,12 @@ the number of affected rows, when:
 \itemize{
 \item \strong{age} is under 10 years (predictions are near zero and unreliable) or
 outside the age range of the fitting data (class \code{ung2009_warning_age});
-\item \strong{climate} is outside the range of the fitting data
-(class \code{ung2009_warning_climate}). Ranges are published only for black
-spruce, jack pine and trembling aspen; other species use the pooled range
-of those three;
+\item \strong{time horizon}: ages for the same species and climate span more than 10
+years, so the result is a longer-term projection than the models were
+designed for (class \code{ung2009_warning_horizon}; see \emph{Intended use and time
+horizon});
+\item \strong{climate} is outside the range of the fitting data for that species
+(class \code{ung2009_warning_climate}; ranges in \link{ung_envelope});
 \item \strong{sensitivity}: a change of 100 degree-days or 100 mm precipitation
 changes predicted volume by more than 15 \%
 (class \code{ung2009_warning_sensitivity}; see \code{\link[=ung_sensitivity]{ung_sensitivity()}}). The climate
@@ -103,10 +132,10 @@ can silence individual checks.
 \section{Limitations stated by the authors}{
 
 \itemize{
-\item The models were built for \strong{increment predictions over short horizons
-(under about 10 years)} within the Canadian National Forest Inventory.
-There is no safeguard on stem density, so use long-term projections
-with caution.
+\item The models were built for \strong{increment predictions over very short (< 10
+years) intervals} within the CNFI, with no safeguard on the number of
+merchantable stems per hectare. Use long-term projections with caution
+(see \emph{Intended use and time horizon}).
 \item They were fitted to \strong{single-measurement temporary plots} with one
 species making up at least 75 \% of basal area. For mixed stands the
 authors suggest applying the model to each species separately.
@@ -119,7 +148,22 @@ with provincial models.
 }
 }
 
+\section{Species-mean climate}{
+
+Leave \code{dd0} and/or \code{map} as \code{NULL} to get a "typical stand" curve: the mean
+climate of the plots each species was fitted to is used, and a message says
+so. The values used are returned in the \code{dd0} and \code{map} columns. This is a
+convenience for comparing species or sketching a curve, \strong{not} a prediction
+for a particular site; the fitting-plot mean can be far from the climate of
+the stand you care about. For a site, supply its own climate (see
+\code{\link[=ung_climate]{ung_climate()}}) and, to see how much climate uncertainty matters, use
+\code{\link[=ung_uncertainty]{ung_uncertainty()}}.
+}
+
 \examples{
+# Typical-stand curves at each species' mean fitting-plot climate
+ung_volume(c("black spruce", "Douglas-fir"), age = 80)
+
 # Trembling aspen yield curve for a boreal site
 curve <- ung_volume("trembling aspen", age = seq(10, 150, by = 10),
                     dd0 = 2200, map = 750)
@@ -140,5 +184,6 @@ Duan, N. 1983. Smearing estimate: a nonparametric retransformation method.
 Journal of the American Statistical Association 78: 605-610.
 }
 \seealso{
-\code{\link[=ung_sensitivity]{ung_sensitivity()}}, \code{\link[=ung_climate]{ung_climate()}}, \code{\link[=ung_species]{ung_species()}}
+\code{\link[=ung_sensitivity]{ung_sensitivity()}}, \code{\link[=ung_uncertainty]{ung_uncertainty()}}, \code{\link[=ung_climate]{ung_climate()}},
+\code{\link[=ung_species]{ung_species()}}
 }

@@ -3,4 +3,6 @@
 ^\.vscode$
 ^LICENSE\.md$
 ^\.github$
+^myfiles$
+^\.tmp_.*$
 ^.*\.Rproj$

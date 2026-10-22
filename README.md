@@ -24,6 +24,10 @@ remotes::install_github("bcgov/climr")
 
 ## Use
 
+A step-by-step worked example (location, model choice, climate values,
+prediction, warnings, sensitivity and uncertainty checks) is in the vignette:
+`vignette("ung-workflow", package = "NationalModelUng2009")`.
+
 ```r
 library(NationalModelUng2009)
 
@@ -38,6 +42,14 @@ ung_volume("black spruce", age = 80, dd0 = clim$dd0, map = clim$map)
 # How fragile is the answer? (volume change for +/- 100 degree-days or 100 mm)
 ung_sensitivity("jack pine", age = 80, dd0 = 2200, map = 800)
 
+# Typical-stand curve: omit dd0/map to use each species' mean fitting-plot climate
+ung_volume(c("black spruce", "Douglas-fir"), age = 80)
+
+# Climate-uncertainty fan (Monte Carlo over dd0 and map)
+fan <- ung_uncertainty("white spruce", age = seq(20, 200, by = 20),
+                       dd0 = 1800, map = 700, seed = 1)
+plot(fan)
+
 ung_species()   # the 25 supported species
 ```
 
@@ -46,13 +58,39 @@ Many stands at once: pass vectors (or data frame columns) for `species`, `age`,
 
 ## Climate inputs: read this first
 
-* `dd0` is **degree-days above 0 °C** (ClimateNA/ClimateBC `DD_0`), **not**
-  growing degree-days above 5 °C (`DD5`). Mixing them up gives wrong answers.
-* `map` is mean annual precipitation in **mm**.
-* Use long-term normals for the stand location, not one year's weather.
-* `climr` has no native `DD_0`; `ung_climate()` derives it from the degree-day
-  variables climr does provide. ClimateNA/ClimateBC users can pass their
-  `DD_0` and `MAP` columns directly.
+* `dd0` is **annual degree-days above 0 °C** (the paper's `D0`). It is **not**
+  growing degree-days above 5 °C (`DD5`), and **not** ClimateNA/ClimateBC/climr
+  `DD_0`, which is degree-days *below* 0 °C. Mixing them up gives wrong answers.
+* `map` is annual precipitation in **mm**.
+* Give **one value of each per stand**, constant over stand age: the paper
+  attached a single plot-level `D0` and `P` to each plot (and reused them at both
+  measurement dates for increments). They are per-year quantities, not a time
+  series. They derive from interpolated climate normals "to which inter-annual
+  variability has been restored"; the averaging period is not stated, so use
+  values representative of the location over several decades (e.g. 1981-2010)
+  and report which you used.
+* Neither climr nor ClimateNA provides degree-days above 0 °C. `ung_climate()`
+  derives `dd0` from variables climr does provide
+  (`DD18 - DDsub18 + 365 * 18 + DDsub0`); this is an approximation, not yet
+  validated against the paper's climate. With a local ClimateNA or ClimateBC
+  run (annual normals containing `MAP`, `DD18`, `DD_18`, `DD_0`), use
+  `ung_climate_from_climatena()`; do not pass `DD_0` as `dd0`.
+
+## Species-mean climate and the uncertainty fan
+
+* Leave `dd0`/`map` out of `ung_volume()` (or `ung_sensitivity()`,
+  `ung_uncertainty()`) and the species mean of the fitting plots
+  (`ung_envelope$dd0_mean`, `$map_mean`) is used, with a message. This gives a
+  *typical-stand* curve for comparing species; it is **not** a site prediction.
+* `ung_uncertainty()` draws `n` (`dd0`, `map`) pairs from an untruncated bivariate
+  normal (bounded at 0) around your climate and reports the median and a central
+  interval of volume. By default the SDs are the species' among-plot SDs in the
+  fitting data (spatial, **not** inter-annual and not the error of your climate
+  product); pass `sd_dd0`/`sd_map` if you know your own uncertainty, and `cor` if
+  you want correlated draws. Only climate uncertainty is propagated (no
+  parameter or residual error), so it is not a prediction interval. The
+  `prop_outside` column gives the share of draws outside the species' fitting
+  range.
 
 ## Warnings
 
@@ -61,6 +99,7 @@ Many stands at once: pass vectors (or data frame columns) for `species`, `age`,
 | Class | Trigger |
 | --- | --- |
 | `ung2009_warning_age` | age < 10 years, or outside the fitting-data age range |
+| `ung2009_warning_horizon` | ages for the same species and climate span more than 10 years (a yield curve or long-term projection) |
 | `ung2009_warning_climate` | `dd0` or `map` outside the fitting-data range |
 | `ung2009_warning_sensitivity` | ±100 degree-days or ±100 mm changes volume by > 15 % |
 | `ung2009_warning_models` | Nat1 and Nat2 volumes differ by > 30 % |
@@ -68,15 +107,19 @@ Many stands at once: pass vectors (or data frame columns) for `species`, `age`,
 | `ung2009_warning_na` | missing inputs |
 
 Silence one class with `withCallingHandlers()`, or everything with `warn = FALSE`.
-The paper publishes fitting-data ranges only for black spruce, jack pine and
-trembling aspen; other species are checked against the pooled range of those
-three, which is approximate.
+Ranges are per species (`ung_envelope`).
 
 ## Limitations (from the paper)
 
-* Designed for **short-horizon (< 10 yr) increment prediction** for the Canadian
-  National Forest Inventory. There is no stem-density safeguard, so use
-  long-term projections with caution.
+* The authors state: "the models developed here were designed for increment
+  predictions over very short (< 10 years) intervals, as requested within the
+  context of the CNFI. The absence of safeguards, such as an empirical
+  adjustment to the number of merchantable stems per hectare, means that the
+  user who may want to use these models for longer-term projections should use
+  caution." (CNFI = Canadian National Forest Inventory.) A yield curve over
+  many decades is a longer-term projection in this sense;
+  `ung_volume()` warns (`ung2009_warning_horizon`) when one call spans more
+  than 10 years of age for the same species and climate.
 * Fitted to single-measurement plots dominated (≥ 75 % basal area) by one
   species; for mixed stands apply the model per species.
 * Climate terms are **descriptive, not predictive**: do not use future climate
@@ -87,11 +130,18 @@ three, which is approximate.
 ## Provenance of parameters
 
 Parameters were taken from the CTAE-derived implementation and are stored in
-`data-raw/ung_parameters.csv` (built by `data-raw/build_parameters.R`). The
-paper's parameter tables were not available in machine-readable form, so they
-have been checked only for consistency with the fitting-data means in Table 2
-(see `tests/`). Please compare against the published tables before relying on
-them for a species you care about.
+`data-raw/ung_parameters.csv` (built by `data-raw/build_parameters.R`).
+
+* **Nat1** (h, g, v coefficients and the three Duan factors): checked cell by
+  cell against `Parms.csv` (the table with standard errors),
+  `Ung2009_NatOneWide.csv`, `UngNatGY/NatOneWide.csv` and `Fit.csv` (in the
+  local, untracked `myfiles/` folder). All 25 species match exactly.
+* **Nat2** (`v10`-`v22`, `CDv2`): checked against sheet `V` of the developers'
+  spreadsheet (`Ung et al G&Y V, H and G models with DegreeDays.xls`). All 25
+  species match exactly. The `H` and `G` sheets of that file are slightly
+  different, unpublished individual models and are not used.
+* **Fitting-data ranges** (`ung_envelope`): per-species min/max/mean/SD from the
+  spreadsheet's `DATASUMMARY` sheet (`data-raw/build_envelope.R`).
 
 ## Licence
 

@@ -26,7 +26,10 @@ Imports:
     stats
 Suggests:
     climr,
+    knitr,
+    rmarkdown,
     testthat (>= 3.0.0)
 Remotes: bcgov/climr
+VignetteBuilder: knitr
 Config/testthat/edition: 3
 LazyData: true

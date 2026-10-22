@@ -22,11 +22,12 @@
 #' @export
 #' @examples
 #' ung_sensitivity(c("PINU.BAN", "ACER.SAC"), age = 80, dd0 = 2200, map = 800)
-ung_sensitivity <- function(species, age, dd0, map,
+ung_sensitivity <- function(species, age, dd0 = NULL, map = NULL,
                             model = c("both", "Nat1", "Nat2"),
                             d_dd0 = 100, d_map = 100) {
   model <- match.arg(model)
   x <- .prepare_inputs(species, age, dd0, map)
+  .note_defaults(x)
   .sensitivity(x, model, d_dd0, d_map)
 }
 

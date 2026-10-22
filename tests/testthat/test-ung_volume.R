@@ -43,6 +43,17 @@ test_that("a typical in-range stand gives no warnings", {
   expect_no_warning(ung_volume("PICE.MAR", 80, 2079, 965))
 })
 
+test_that("fitting-data envelope is per species and internally consistent", {
+  env <- ung_envelope
+  expect_equal(nrow(env), 25)
+  expect_setequal(env$species, ung_parameters$species)
+  expect_true(all(env$v_max > env$v_mean & env$v_mean > env$v_min))
+  # a coastal species is checked against its own range, not a pooled one
+  expect_gt(env$v_max[env$species == "PSEU.MEN"], 1000)
+  e <- env[env$species == "PSEU.MEN", ]
+  expect_no_warning(ung_volume("PSEU.MEN", 100, e$dd0_mean, e$map_mean))
+})
+
 test_that("diagnostic warnings fire with their own classes", {
   expect_ung_warning(ung_volume("POPU.TRE", 5, 2200, 750), "ung2009_warning_age")
   expect_ung_warning(ung_volume("POPU.TRE", 300, 2200, 750), "ung2009_warning_age")
@@ -53,6 +64,17 @@ test_that("diagnostic warnings fire with their own classes", {
   expect_ung_warning(ung_volume("POPU.TRE", NA, 2200, 750), "ung2009_warning_na")
   # Specific classes can be silenced individually, and warn = FALSE silences all
   expect_no_warning(ung_volume("POPU.TRE", 5, 2200, 750, warn = FALSE))
+})
+
+test_that("horizon warning flags yield curves but not single ages or stands", {
+  curve_ages <- seq(20, 100, by = 20)
+  expect_ung_warning(ung_volume("PICE.MAR", curve_ages, 2100, 800),
+                     "ung2009_warning_horizon")
+  # A span of exactly 10 years is within the design horizon
+  expect_no_warning(ung_volume("PICE.MAR", c(70, 80), 2100, 800))
+  # Different stands (different climate) are not one projection
+  expect_no_warning(ung_volume("PICE.MAR", c(40, 90), c(2000, 2200), 800))
+  expect_no_warning(ung_volume("PICE.MAR", curve_ages, 2100, 800, warn = FALSE))
 })
 
 test_that("sensitivity table has the documented structure and values", {

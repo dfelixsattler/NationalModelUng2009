@@ -7,8 +7,8 @@
 ung_sensitivity(
   species,
   age,
-  dd0,
-  map,
+  dd0 = NULL,
+  map = NULL,
   model = c("both", "Nat1", "Nat2"),
   d_dd0 = 100,
   d_map = 100
@@ -20,9 +20,13 @@ ung_sensitivity(
 
 \item{age}{Numeric vector. Stand age in years (> 0).}
 
-\item{dd0}{Numeric vector. Annual degree-days above 0 degrees C (not DD5).}
+\item{dd0}{Numeric vector. Annual degree-days above 0 degrees C (not DD5).
+If \code{NULL} (default), the species mean of the fitting plots is used
+(\code{dd0_mean} in \link{ung_envelope}); see \emph{Species-mean climate}.}
 
-\item{map}{Numeric vector. Mean annual precipitation in mm.}
+\item{map}{Numeric vector. Mean annual precipitation in mm. If \code{NULL}
+(default), the species mean of the fitting plots is used (\code{map_mean} in
+\link{ung_envelope}).}
 
 \item{model}{One of \code{"both"} (default), \code{"Nat1"} or \code{"Nat2"}.}
 

@@ -1,5 +1,6 @@
 # Thresholds for diagnostic warnings (documented in ?ung_volume)
 .young_age <- 10          # years; below this, predictions are ~0 and unreliable
+.max_horizon <- 10        # years; the models were designed for increments shorter than this
 .sens_threshold <- 15     # % volume change for +/-100 degree-days or mm
 .model_gap <- 0.30        # relative Nat1 vs Nat2 disagreement
 
@@ -23,18 +24,31 @@
              "age is outside the range of the fitting data (see ?ung_volume).",
              "ung2009_warning_age")
 
-  # Climate: outside the fitting data; also the most common unit mix-up (DD5)
+  # Horizon: the same species and climate predicted over a span of ages longer
+  # than the models were designed for (a yield curve or long-term projection)
+  grp <- paste(x$species, x$dd0, x$map)
+  span <- stats::ave(x$age, grp, FUN = function(a) {
+    if (all(is.na(a))) NA_real_ else diff(range(a, na.rm = TRUE))
+  })
+  .warn_rows(span > .max_horizon, n,
+             paste0("ages for the same species and climate span more than ",
+                    .max_horizon, " years. The models were designed for ",
+                    "increment predictions over very short (< ", .max_horizon,
+                    " years) intervals and have no safeguard such as an ",
+                    "adjustment to the number of merchantable stems per ",
+                    "hectare, so use caution for longer-term projections ",
+                    "(see ?ung_volume)."),
+             "ung2009_warning_horizon")
+
+  # Climate: outside the fitting data for the species; also the most common
+  # unit mix-up (DD5, or DD_0 which is degree-days *below* 0)
   out_dd0 <- x$dd0 < env$dd0_min | x$dd0 > env$dd0_max
   out_map <- x$map < env$map_min | x$map > env$map_max
   .warn_rows(out_dd0 | out_map, n,
-             paste0("climate is outside the range of the fitting data ",
-                    "(dd0 ", min(env$dd0_min), "-", max(env$dd0_max),
-                    ", map ", min(env$map_min), "-", max(env$map_max),
-                    " for the pooled range). Predictions are extrapolations. ",
-                    "`dd0` must be degree-days above 0 C (not DD5) and `map` ",
-                    "annual precipitation in mm. Pooled ranges are used for ",
-                    "species other than black spruce, jack pine and ",
-                    "trembling aspen."),
+             paste0("climate is outside the range of the fitting data for the ",
+                    "species (see ?ung_envelope). Predictions are ",
+                    "extrapolations. `dd0` must be degree-days above 0 C (not ",
+                    "DD5 or DD_0) and `map` annual precipitation in mm."),
              "ung2009_warning_climate")
 
   # Sensitivity to small climate changes
@@ -56,14 +70,13 @@
                "ung2009_warning_models")
   }
 
-  # Outputs beyond anything in the fitting data
+  # Outputs beyond anything in the fitting data for the species
   vcols <- intersect(c("V_Nat1", "V_Nat2"), names(out))
-  too_big <- Reduce(`|`, lapply(vcols, function(v) out[[v]] > .max_observed[["V"]]))
-  if ("BA_Nat1" %in% names(out)) too_big <- too_big | out$BA_Nat1 > .max_observed[["BA"]]
+  too_big <- Reduce(`|`, lapply(vcols, function(v) out[[v]] > env$v_max))
+  if ("BA_Nat1" %in% names(out)) too_big <- too_big | out$BA_Nat1 > env$ba_max
   .warn_rows(too_big, n,
              paste0("predicted volume or basal area exceeds the largest value ",
-                    "in the fitting data (", .max_observed[["V"]], " m3/ha, ",
-                    .max_observed[["BA"]], " m2/ha)."),
+                    "in the fitting data for the species (see ?ung_envelope)."),
              "ung2009_warning_output")
 
   invisible(NULL)

@@ -16,25 +16,47 @@
 #'   `ln(V) = v1 + v2 / age`, with `v1` and `v2` linear in `dd0` and `map`,
 #'   again back-transformed with a Duan correction factor.
 #'
+#' @section Intended use and time horizon:
+#' The authors state (Ung et al. 2009, Discussion): "the models developed here
+#' were designed for increment predictions over very short (< 10 years)
+#' intervals, as requested within the context of the CNFI. The absence of
+#' safeguards, such as an empirical adjustment to the number of merchantable
+#' stems per hectare, means that the user who may want to use these models for
+#' longer-term projections should use caution."
+#'
+#' (CNFI is the Canadian National Forest Inventory.) A yield curve over many
+#' decades, such as the one drawn by `plot()`, is a longer-term projection in
+#' this sense. [ung_volume()] therefore warns (class `ung2009_warning_horizon`)
+#' when one call predicts the same species and climate over ages that span more
+#' than 10 years.
+#'
 #' @section Climate inputs:
-#' * `dd0` is **annual degree-days above 0 degrees C** (ClimateNA/ClimateBC
-#'   variable `DD_0`). It is *not* growing degree-days above 5 degrees C
-#'   (`DD5`); using `DD5` will silently give wrong answers.
-#' * `map` is **mean annual precipitation in mm** (`MAP`).
-#' * The models were fitted to interpolated climate normals with inter-annual
-#'   variability restored (McKenney et al. 2001). Use long-term averages for the
-#'   stand location, not a single year's weather. [ung_climate()] can look up
-#'   normals with the `climr` package.
+#' * `dd0` is **annual degree-days above 0 degrees C** (the paper's `D0`). It is
+#'   *not* growing degree-days above 5 degrees C (`DD5`), and it is *not*
+#'   ClimateNA/ClimateBC/climr `DD_0`, which is degree-days *below* 0 degrees C.
+#'   Using either gives silently wrong answers.
+#' * `map` is **annual precipitation in mm** (`MAP`; the paper's `P`).
+#' * Supply **one value of each per stand**, held constant over the stand's age:
+#'   the paper attached a single plot-level `D0` and `P` to every plot and, when
+#'   predicting increments, used the same values at both measurement dates. They
+#'   are per-year quantities (degree-days per year, mm per year), not a time
+#'   series. The paper derived them from interpolated climate normals "to which
+#'   inter-annual variability has been restored" (McKenney et al. 2001) and does
+#'   not state the averaging period, so use values representative of the stand
+#'   location over several decades (e.g. 1981-2010 normals, which is what
+#'   [ung_climate()] returns) and report which you used.
 #'
 #' @section Warnings:
 #' With `warn = TRUE` (the default) the function warns, once per issue and with
 #' the number of affected rows, when:
 #' * **age** is under 10 years (predictions are near zero and unreliable) or
 #'   outside the age range of the fitting data (class `ung2009_warning_age`);
-#' * **climate** is outside the range of the fitting data
-#'   (class `ung2009_warning_climate`). Ranges are published only for black
-#'   spruce, jack pine and trembling aspen; other species use the pooled range
-#'   of those three;
+#' * **time horizon**: ages for the same species and climate span more than 10
+#'   years, so the result is a longer-term projection than the models were
+#'   designed for (class `ung2009_warning_horizon`; see *Intended use and time
+#'   horizon*);
+#' * **climate** is outside the range of the fitting data for that species
+#'   (class `ung2009_warning_climate`; ranges in [ung_envelope]);
 #' * **sensitivity**: a change of 100 degree-days or 100 mm precipitation
 #'   changes predicted volume by more than 15 %
 #'   (class `ung2009_warning_sensitivity`; see [ung_sensitivity()]). The climate
@@ -53,10 +75,10 @@
 #' can silence individual checks.
 #'
 #' @section Limitations stated by the authors:
-#' * The models were built for **increment predictions over short horizons
-#'   (under about 10 years)** within the Canadian National Forest Inventory.
-#'   There is no safeguard on stem density, so use long-term projections
-#'   with caution.
+#' * The models were built for **increment predictions over very short (< 10
+#'   years) intervals** within the CNFI, with no safeguard on the number of
+#'   merchantable stems per hectare. Use long-term projections with caution
+#'   (see *Intended use and time horizon*).
 #' * They were fitted to **single-measurement temporary plots** with one
 #'   species making up at least 75 % of basal area. For mixed stands the
 #'   authors suggest applying the model to each species separately.
@@ -71,12 +93,27 @@
 #'   (case-insensitive); see [ung_species()].
 #' @param age Numeric vector. Stand age in years (> 0).
 #' @param dd0 Numeric vector. Annual degree-days above 0 degrees C (not DD5).
-#' @param map Numeric vector. Mean annual precipitation in mm.
+#'   If `NULL` (default), the species mean of the fitting plots is used
+#'   (`dd0_mean` in [ung_envelope]); see *Species-mean climate*.
+#' @param map Numeric vector. Mean annual precipitation in mm. If `NULL`
+#'   (default), the species mean of the fitting plots is used (`map_mean` in
+#'   [ung_envelope]).
 #' @param model One of `"both"` (default), `"Nat1"` or `"Nat2"`.
-#' @param warn Logical. Set to `FALSE` to skip all diagnostic warnings.
+#' @param warn Logical. Set to `FALSE` to skip all diagnostic warnings and the
+#'   message about default climate.
 #'
 #' @details Arguments are recycled to a common length; lengths must be 1 or
 #'   equal to the longest argument.
+#'
+#' @section Species-mean climate:
+#' Leave `dd0` and/or `map` as `NULL` to get a "typical stand" curve: the mean
+#' climate of the plots each species was fitted to is used, and a message says
+#' so. The values used are returned in the `dd0` and `map` columns. This is a
+#' convenience for comparing species or sketching a curve, **not** a prediction
+#' for a particular site; the fitting-plot mean can be far from the climate of
+#' the stand you care about. For a site, supply its own climate (see
+#' [ung_climate()]) and, to see how much climate uncertainty matters, use
+#' [ung_uncertainty()].
 #'
 #' @return A data.frame of class `ung_volume` with one row per input row:
 #'   `species` (code), `age`, `dd0`, `map` and, depending on `model`,
@@ -92,9 +129,13 @@
 #' Duan, N. 1983. Smearing estimate: a nonparametric retransformation method.
 #' Journal of the American Statistical Association 78: 605-610.
 #'
-#' @seealso [ung_sensitivity()], [ung_climate()], [ung_species()]
+#' @seealso [ung_sensitivity()], [ung_uncertainty()], [ung_climate()],
+#'   [ung_species()]
 #' @export
 #' @examples
+#' # Typical-stand curves at each species' mean fitting-plot climate
+#' ung_volume(c("black spruce", "Douglas-fir"), age = 80)
+#'
 #' # Trembling aspen yield curve for a boreal site
 #' curve <- ung_volume("trembling aspen", age = seq(10, 150, by = 10),
 #'                     dd0 = 2200, map = 750)
@@ -104,13 +145,14 @@
 #' stands <- data.frame(species = c("PICE.MAR", "PINU.BAN"),
 #'                      age = c(80, 60), dd0 = c(2000, 2300), map = c(900, 700))
 #' ung_volume(stands$species, stands$age, stands$dd0, stands$map, model = "Nat2")
-ung_volume <- function(species, age, dd0, map,
+ung_volume <- function(species, age, dd0 = NULL, map = NULL,
                        model = c("both", "Nat1", "Nat2"),
                        warn = TRUE) {
   model <- match.arg(model)
 
   # Validate and recycle inputs, then predict
   x <- .prepare_inputs(species, age, dd0, map)
+  if (isTRUE(warn)) .note_defaults(x)
   out <- cbind(x, .predict(x, model))
 
   # Diagnostics on the predictions
@@ -121,8 +163,21 @@ ung_volume <- function(species, age, dd0, map,
 }
 
 # Validate inputs, resolve species names and recycle to a common length.
-.prepare_inputs <- function(species, age, dd0, map) {
+# NULL `dd0` / `map` are filled with the species mean of the fitting plots and
+# recorded in the "defaulted" attribute.
+.prepare_inputs <- function(species, age, dd0 = NULL, map = NULL) {
   codes <- .resolve_species(species)
+
+  defaulted <- character()
+  env <- .envelope_for(codes)
+  if (is.null(dd0)) {
+    dd0 <- env$dd0_mean
+    defaulted <- c(defaulted, "dd0")
+  }
+  if (is.null(map)) {
+    map <- env$map_mean
+    defaulted <- c(defaulted, "map")
+  }
 
   # A bare NA is logical; treat it as a missing number
   age <- if (is.logical(age) && all(is.na(age))) as.numeric(age) else age
@@ -148,13 +203,27 @@ ung_volume <- function(species, age, dd0, map,
   if (any(dd0 < 0, na.rm = TRUE)) stop("`dd0` (degree-days) cannot be negative.", call. = FALSE)
   if (any(map < 0, na.rm = TRUE)) stop("`map` (precipitation) cannot be negative.", call. = FALSE)
 
-  data.frame(
+  out <- data.frame(
     species = rep_len(codes, n),
     age = rep_len(as.numeric(age), n),
     dd0 = rep_len(as.numeric(dd0), n),
     map = rep_len(as.numeric(map), n),
     stringsAsFactors = FALSE
   )
+  attr(out, "defaulted") <- defaulted
+  out
+}
+
+# Tell the user when species-mean climate was substituted.
+.note_defaults <- function(x) {
+  d <- attr(x, "defaulted")
+  if (length(d) > 0L) {
+    message("Using the species mean of the fitting plots for ",
+            paste0("`", d, "`", collapse = " and "),
+            " (see ?ung_envelope). This is a typical-stand curve, not a ",
+            "prediction for a specific site.")
+  }
+  invisible(x)
 }
 
 `%nin%` <- function(x, table) !(x %in% table)
@@ -173,6 +242,7 @@ ung_volume <- function(species, age, dd0, map,
       (p$g20 + p$g21 * x$dd0 + p$g22 * x$map) / x$age
 
     # Volume uses the *uncorrected* ln(H) and ln(BA); Duan factors apply on output
+    # (authors' "system equations.xls": ln(V) = v30 + v31*ln(H) + v32*ln(G))
     ln_v <- p$v30 + p$v31 * ln_h + p$v32 * ln_g
 
     out$H_Nat1 <- exp(ln_h) * p$CDh
