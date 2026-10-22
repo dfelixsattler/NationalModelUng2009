@@ -37,7 +37,7 @@ example \code{n}, \code{interval}, \code{sd_dd0}, \code{sd_map} or \code{seed}. 
 \code{...} must be named in full.}
 
 \item{nat1_bias_correction}{Logical. \code{TRUE} multiplies Nat1 volume by the
-approximate correction described in \emph{Nat1 volume is biased low}. Default
+approximate correction described in \emph{Why Nat1 volume needs a correction}. Default
 \code{FALSE} (the published model).}
 
 \item{uncertainty}{Logical. \code{TRUE} adds \code{lower} and \code{upper} columns: the

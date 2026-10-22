@@ -54,7 +54,7 @@ Default 0.}
 their rounding error (see \emph{Rounding of the parameters}).}
 
 \item{nat1_bias_correction}{Logical. \code{TRUE} multiplies Nat1 volume by the
-approximate correction described in \emph{Nat1 volume is biased low}. Default
+approximate correction described in \emph{Why Nat1 volume needs a correction}. Default
 \code{FALSE} (the published model).}
 
 \item{seed}{Optional integer for reproducible draws. The global random

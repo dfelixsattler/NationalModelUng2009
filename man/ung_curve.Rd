@@ -28,7 +28,7 @@ per species.}
 \item{model}{One of \code{"both"} (default), \code{"Nat1"} or \code{"Nat2"}.}
 
 \item{nat1_bias_correction}{Logical. \code{TRUE} multiplies Nat1 volume by the
-approximate correction described in \emph{Nat1 volume is biased low}. Default
+approximate correction described in \emph{Why Nat1 volume needs a correction}. Default
 \code{FALSE} (the published model).}
 
 \item{warn}{Logical. Set to \code{FALSE} to skip the warning and the message about
