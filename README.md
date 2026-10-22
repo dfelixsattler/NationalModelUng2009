@@ -71,32 +71,32 @@ A step-by-step worked example is in the vignette:
 
 ## Which model to use
 
-**Use Nat2** (the default of `ung_yield_table()`). It predicts average volume
+**User discretion required**: Nat2 is the default of `ung_yield_table()`) as it predicts average volume
 directly.
 
 Nat1 predicts H and G first and then puts these predictions into its volume
-equation. As published, Nat1 volume is **biased low**: across the 25 species,
+equation. The scripts of the current package follow the published equations and parameters. As such, Nat1 volume is **biased low**: across the 25 species,
 at age 80 and each species' average climate, Nat2 is a median of about
-**20 % higher** than Nat1. Nat1 is still available, with an optional
-correction (explained next).
+**20 % higher** than Nat1 (see next section). Nat1 is still available, with an optional
+correction.
 
 ### Why Nat1 volume needs a correction
 
 1. The models predict the *logarithm* of volume. Taking `exp()` of a predicted
    log gives the middle (median) stand, not the average stand (assuming the
    errors on the log scale are roughly symmetric, as in a normal distribution).
-2. A Duan factor (explained below) is multiplied on to move the median up to
+2. A Duan factor (as used by the original authors and always applied by the package) is multiplied on to move the median up to
    the average. Its size should reflect *all* the scatter of ln(V) at a given
    age and climate.
-3. In Nat1 that scatter has three sources: the scatter of the volume equation
-   itself, the error in predicted ln(H) (times `v31`) and the error in
+3. In Nat1 that scatter has three sources: (i) the scatter of the volume equation
+   itself, (ii) the error in predicted ln(H) (times `v31`) and (iii) the error in
    predicted ln(G) (times `v32`).
-4. Nat1's volume factor (`CDv`, about 1.001) was estimated with *measured* H and
+4. Nat1's volume Duan factor (`CDv`, about 1.001) was estimated with *measured* H and
    G, where volume is almost exactly determined. It covers only the first
-   source. The errors carried over from predicted H and G, mostly from G, are
+   source (i.e., the scatter of the volume equation itself). The errors carried over from predicted H and G, mostly from G, are
    not accounted for. This is why uncorrected Nat1 volume is biased low.
-5. Nat2 has a single equation from age and climate straight to volume. Its one
-   residual already contains all the scatter, so its factor (`CDv2`, 1.15 for
+5. Nat2 has a single equation from age and climate straight to volume. Its
+ residual already contains all the scatter, so its Dua factor (`CDv2`, 1.15 for
    black spruce) accounts for everything and needs no correction.
 6. For Nat1, the missing scatter can be estimated. Each Duan factor gives the
    variance of its log errors, about `2 * ln(CD)`. The extra variance that H
@@ -113,21 +113,14 @@ scatter. It ranges from 1.05 to 1.46 depending on the species (1.29 for black
 spruce). With it, the median gap between Nat2 and Nat1 falls from about 20 % to
 under 1 %, which supports this explanation.
 
-This matters for the Carbon Budget Model and similar tools, which add volume
-(and carbon) over many stands and therefore need the average stand, not the
-median. The correction was added by this package and is not part of the
-published model, so it is off by default.
+This matters for the Carbon Budget Model and similar tools. Normally, a given yield curve is used for every hectare of a particular stand type, and one multiplies the yields by total area to get total volume for that particular stand type. That needs the average volume per hectare, not the volume of the typical (median) stand, which is what Nat1 without the correction would provide: without the correction, Nat1 totals come out too low.  The correction that was added as an option in this package attempts to correct for this. It was not part of the published model, so it is "off" by default.
 
 ### How Nat1 links height and basal area to volume
 
 The Nat1 volume equation is
 `ln(V) = v30 + v31 * ln(H) + v32 * ln(G)`. The `ln(H)` and `ln(G)` it uses are
 the values straight from the height and basal-area equations, **before** the
-Duan correction factors (explained below) are applied to H and G. The H and G
-columns in the output *are* corrected. This is how the authors fitted and wrote
-the model, and how earlier R scripts calculated it. It matters: putting the
-corrected H and G into the volume equation instead would raise Nat1 volume by
-about a third for black spruce.
+Duan correction factors are applied to H and G.
 
 ## Parameters are rounded: read this
 
@@ -203,15 +196,6 @@ the same age and climate will vary more than the interval shows.
 * Climate in these models is **descriptive, not predictive**: do not use future
   climate scenarios to estimate the effects of climate change.
 
-## Duan correction factor, in plain words
-
-The models predict the *logarithm* of height, basal area and volume. Turning a
-logarithm back into a value with `exp()` gives roughly the middle (median)
-stand, which is lower than the average stand. Multiplying by a small factor,
-called the Duan correction factor after the statistician who proposed it,
-brings the result back up to the average. The factors are published with the
-parameters (for black spruce: 1.02 for H, 1.32 for G, 1.001 for Nat1 volume and
-1.15 for Nat2 volume) and are always applied by the package.
 
 ## Warnings and checks
 
