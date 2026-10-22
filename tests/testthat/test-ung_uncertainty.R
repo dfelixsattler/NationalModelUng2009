@@ -1,6 +1,6 @@
 test_that("species-mean climate is used when dd0 and map are omitted", {
   e <- ung_envelope[ung_envelope$species == "PICE.MAR", ]
-  expect_message(d <- ung_volume("PICE.MAR", 80), "species mean")
+  expect_message(d <- ung_volume("PICE.MAR", 80), "average")
   expect_equal(d$dd0, e$dd0_mean)
   expect_equal(d$map, e$map_mean)
   expect_equal(d[, c("V_Nat1", "V_Nat2")],

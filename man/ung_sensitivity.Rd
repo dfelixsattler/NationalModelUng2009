@@ -21,12 +21,13 @@ ung_sensitivity(
 \item{age}{Numeric vector. Stand age in years (> 0).}
 
 \item{dd0}{Numeric vector. Annual degree-days above 0 degrees C (not DD5).
-If \code{NULL} (default), the species mean of the fitting plots is used
-(\code{dd0_mean} in \link{ung_envelope}); see \emph{Species-mean climate}.}
+If \code{NULL} (default), the average \code{dd0} of the plots used to fit that
+species' model is used (column \code{dd0_mean} of \link{ung_envelope}); see
+\emph{Climate used when \code{dd0} and \code{map} are omitted}.}
 
 \item{map}{Numeric vector. Mean annual precipitation in mm. If \code{NULL}
-(default), the species mean of the fitting plots is used (\code{map_mean} in
-\link{ung_envelope}).}
+(default), the average \code{map} of the plots used to fit that species' model
+is used (column \code{map_mean} of \link{ung_envelope}).}
 
 \item{model}{One of \code{"both"} (default), \code{"Nat1"} or \code{"Nat2"}.}
 

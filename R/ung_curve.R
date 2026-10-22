@@ -10,8 +10,9 @@
 #' @param species Character vector of species (common name, scientific name or
 #'   code; see [ung_species()]).
 #' @param age Numeric vector of ages (years). Default `10:150`.
-#' @param dd0,map Climate for each species: `NULL` (default; the species mean of
-#'   the fitting plots is used), one value used for every species, or one value
+#' @param dd0,map Climate for each species: `NULL` (default; each species uses
+#'   the average `dd0` and `map` of the plots used to fit its model, see
+#'   [ung_volume()]), one value used for every species, or one value
 #'   per species.
 #'
 #' @details A curve covers more than 10 years of age, so by default

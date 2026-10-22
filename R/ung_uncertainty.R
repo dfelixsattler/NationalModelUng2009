@@ -2,13 +2,14 @@
 #'
 #' Propagates uncertainty in the climate inputs through the models by Monte
 #' Carlo sampling. For each stand, `n` pairs of (`dd0`, `map`) are drawn from a
-#' bivariate normal distribution centred on the supplied (or species-mean)
-#' climate, volume is predicted for every draw, and the median and a central
-#' interval of the predictions are returned.
+#' bivariate normal distribution centred on the supplied climate (or, if `dd0`
+#' or `map` is omitted, on the average of the plots used to fit that species'
+#' model; see [ung_volume()]). Volume is predicted for every draw, and the
+#' median and a central interval of the predictions are returned.
 #'
 #' @section What the spread means:
-#' * By default the standard deviations are the species-level SDs of the climate
-#'   of the fitting plots (`dd0_sd`, `map_sd` in [ung_envelope]). These describe
+#' * By default the standard deviations are those of `dd0` and `map` among the
+#'   plots used to fit the species' model (`dd0_sd`, `map_sd` in [ung_envelope]). These describe
 #'   **spatial variation among plots**, not year-to-year variation, and not the
 #'   error of any particular climate dataset. They answer "how much would the
 #'   prediction move for a location that differs from this one by a typical

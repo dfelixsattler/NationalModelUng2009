@@ -19,8 +19,9 @@ code; see \code{\link[=ung_species]{ung_species()}}).}
 
 \item{age}{Numeric vector of ages (years). Default \code{10:150}.}
 
-\item{dd0, map}{Climate for each species: \code{NULL} (default; the species mean of
-the fitting plots is used), one value used for every species, or one value
+\item{dd0, map}{Climate for each species: \code{NULL} (default; each species uses
+the average \code{dd0} and \code{map} of the plots used to fit its model, see
+\code{\link[=ung_volume]{ung_volume()}}), one value used for every species, or one value
 per species.}
 
 \item{model}{One of \code{"both"} (default), \code{"Nat1"} or \code{"Nat2"}.}

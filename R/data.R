@@ -33,8 +33,10 @@
 #' spruce, jack pine and trembling aspen (its Table 2); the other 22 species come
 #' from the `DATASUMMARY` sheet of the developers' spreadsheet.
 #'
-#' The `dd0_*` and `map_*` columns describe the climate of the fitting plots
-#' (spatial variation among plots, not inter-annual variation).
+#' The `dd0_*` and `map_*` columns describe the climate of the fitting plots,
+#' that is, the field plots used to fit each species' model (spatial variation
+#' among plots, not inter-annual variation). `dd0_mean` and `map_mean` are the
+#' averages that [ung_volume()] uses when `dd0` and `map` are omitted.
 #'
 #' @format A data.frame with 25 rows: `species` (code, see [ung_species()]),
 #'   `n` (number of plots), and for each of `h` (dominant height, m), `ba` (basal

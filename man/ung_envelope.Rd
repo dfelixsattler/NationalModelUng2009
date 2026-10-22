@@ -27,7 +27,9 @@ spruce, jack pine and trembling aspen (its Table 2); the other 22 species come
 from the \code{DATASUMMARY} sheet of the developers' spreadsheet.
 }
 \details{
-The \verb{dd0_*} and \verb{map_*} columns describe the climate of the fitting plots
-(spatial variation among plots, not inter-annual variation).
+The \verb{dd0_*} and \verb{map_*} columns describe the climate of the fitting plots,
+that is, the field plots used to fit each species' model (spatial variation
+among plots, not inter-annual variation). \code{dd0_mean} and \code{map_mean} are the
+averages that \code{\link[=ung_volume]{ung_volume()}} uses when \code{dd0} and \code{map} are omitted.
 }
 \keyword{datasets}

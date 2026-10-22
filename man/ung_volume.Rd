@@ -20,12 +20,13 @@ ung_volume(
 \item{age}{Numeric vector. Stand age in years (> 0).}
 
 \item{dd0}{Numeric vector. Annual degree-days above 0 degrees C (not DD5).
-If \code{NULL} (default), the species mean of the fitting plots is used
-(\code{dd0_mean} in \link{ung_envelope}); see \emph{Species-mean climate}.}
+If \code{NULL} (default), the average \code{dd0} of the plots used to fit that
+species' model is used (column \code{dd0_mean} of \link{ung_envelope}); see
+\emph{Climate used when \code{dd0} and \code{map} are omitted}.}
 
 \item{map}{Numeric vector. Mean annual precipitation in mm. If \code{NULL}
-(default), the species mean of the fitting plots is used (\code{map_mean} in
-\link{ung_envelope}).}
+(default), the average \code{map} of the plots used to fit that species' model
+is used (column \code{map_mean} of \link{ung_envelope}).}
 
 \item{model}{One of \code{"both"} (default), \code{"Nat1"} or \code{"Nat2"}.}
 
@@ -150,23 +151,32 @@ with provincial models.
 }
 }
 
-\section{Species-mean climate}{
+\section{Climate used when \code{dd0} and \code{map} are omitted}{
 
-Leave \code{dd0} and/or \code{map} as \code{NULL} to get a "typical stand" of each species:
-the mean climate of the plots that species was fitted to is used, and a
-message says so. Volume still depends on climate; the climate values used are
-returned in the \code{dd0} and \code{map} columns, and they differ between species.
-This is a
-convenience for comparing species or sketching a curve, \strong{not} a prediction
-for a particular site; the fitting-plot mean can be far from the climate of
-the stand you care about. For a site, supply its own climate (see
-\code{\link[=ung_climate]{ung_climate()}}) and, to see how much climate uncertainty matters, use
-\code{\link[=ung_uncertainty]{ung_uncertainty()}}.
+The authors fitted each species' model to a set of measured field plots (the
+"fitting plots"). Each plot has a \code{dd0} and a \code{map}. If you leave out \code{dd0},
+\code{map} or both, the package uses, for each species, the \strong{average} \code{dd0} and
+the \strong{average} \code{map} of that species' fitting plots. These averages are
+stored in \link{ung_envelope} (columns \code{dd0_mean} and \code{map_mean}). A message
+states which values were substituted, and the values are returned in the
+\code{dd0} and \code{map} columns of the result.
+
+Because the averages differ between species, two species are predicted under
+two different climates. For example, black spruce uses 2079 degree-days and
+965 mm, and Douglas-fir uses 2352 degree-days and 727 mm. Volume still
+depends on climate in the usual way.
+
+The result is a prediction for a \strong{typical stand of each species}, not for
+any particular site. It is useful for comparing species or sketching a
+curve. For a real stand, supply the climate of its location (see
+\code{\link[=ung_climate]{ung_climate()}}), and use \code{\link[=ung_uncertainty]{ung_uncertainty()}} or \code{\link[=ung_sensitivity]{ung_sensitivity()}} to see
+how much the climate values matter.
 }
 
 \examples{
-# A typical stand of each species at age 80, at that species' mean
-# fitting-plot climate (the climate used is shown in the dd0 and map columns)
+# A typical stand of each species at age 80. `dd0` and `map` are omitted, so
+# each species uses the average climate of the plots used to fit its model
+# (shown in the dd0 and map columns of the result)
 ung_volume(c("black spruce", "Douglas-fir"), age = 80)
 
 # Yield curves for two species: ung_curve() combines every species with every age

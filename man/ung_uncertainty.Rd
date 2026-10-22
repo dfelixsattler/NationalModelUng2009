@@ -26,12 +26,13 @@ ung_uncertainty(
 \item{age}{Numeric vector. Stand age in years (> 0).}
 
 \item{dd0}{Numeric vector. Annual degree-days above 0 degrees C (not DD5).
-If \code{NULL} (default), the species mean of the fitting plots is used
-(\code{dd0_mean} in \link{ung_envelope}); see \emph{Species-mean climate}.}
+If \code{NULL} (default), the average \code{dd0} of the plots used to fit that
+species' model is used (column \code{dd0_mean} of \link{ung_envelope}); see
+\emph{Climate used when \code{dd0} and \code{map} are omitted}.}
 
 \item{map}{Numeric vector. Mean annual precipitation in mm. If \code{NULL}
-(default), the species mean of the fitting plots is used (\code{map_mean} in
-\link{ung_envelope}).}
+(default), the average \code{map} of the plots used to fit that species' model
+is used (column \code{map_mean} of \link{ung_envelope}).}
 
 \item{model}{One of \code{"both"} (default), \code{"Nat1"} or \code{"Nat2"}.}
 
@@ -62,15 +63,16 @@ and model: \code{row}, \code{species}, \code{age}, \code{dd0}, \code{map}, \code
 \description{
 Propagates uncertainty in the climate inputs through the models by Monte
 Carlo sampling. For each stand, \code{n} pairs of (\code{dd0}, \code{map}) are drawn from a
-bivariate normal distribution centred on the supplied (or species-mean)
-climate, volume is predicted for every draw, and the median and a central
-interval of the predictions are returned.
+bivariate normal distribution centred on the supplied climate (or, if \code{dd0}
+or \code{map} is omitted, on the average of the plots used to fit that species'
+model; see \code{\link[=ung_volume]{ung_volume()}}). Volume is predicted for every draw, and the
+median and a central interval of the predictions are returned.
 }
 \section{What the spread means}{
 
 \itemize{
-\item By default the standard deviations are the species-level SDs of the climate
-of the fitting plots (\code{dd0_sd}, \code{map_sd} in \link{ung_envelope}). These describe
+\item By default the standard deviations are those of \code{dd0} and \code{map} among the
+plots used to fit the species' model (\code{dd0_sd}, \code{map_sd} in \link{ung_envelope}). These describe
 \strong{spatial variation among plots}, not year-to-year variation, and not the
 error of any particular climate dataset. They answer "how much would the
 prediction move for a location that differs from this one by a typical

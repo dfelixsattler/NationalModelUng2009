@@ -307,16 +307,23 @@ Read the result with these points in mind:
 
 ### Optional: a typical stand without site climate
 
-If you omit `dd0` and `map`, the package uses the mean climate of the plots
-that the models were fitted to for each species, and it prints a message.
+If you omit `dd0` and `map`, the package does not ask for a location. The
+authors fitted the model for each species to measured field plots, and each of
+those plots has a `dd0` and a `map`. For each species, the package uses the
+**average** `dd0` and the **average** `map` of that species' fitting plots. It
+prints a message that says so. The averages are in the table `ung_envelope`
+(columns `dd0_mean` and `map_mean`). They differ between species, so the two
+species below are predicted under two different climates, which the result
+shows in its `dd0` and `map` columns.
 
 ```{r defaults}
 typical <- ung_volume(c("white spruce", "black spruce"), age = 80)
 typical[, c("species", "age", "dd0", "map", "V_Nat1", "V_Nat2")]
 ```
 
-This is useful for comparing species under the same conditions. It is **not**
-a prediction for a particular site. The usual warnings still apply, so the
+This is useful for comparing species. It is **not** a prediction for a
+particular site, because it uses the average climate where each species was
+measured, not the climate of your stand. The usual warnings still apply, so the
 sensitivity and model-difference warnings can appear here.
 
 ## Summary of the steps

@@ -4,5 +4,6 @@
 ^LICENSE\.md$
 ^\.github$
 ^myfiles$
+^PROJECT_STATUS\.md$
 ^\.tmp_.*$
 ^.*\.Rproj$

@@ -46,8 +46,9 @@ plot(ung_curve(c("black spruce", "Douglas-fir"), age = 10:150))
 # by how many percent does the predicted volume change?
 ung_sensitivity("jack pine", age = 80, dd0 = 2200, map = 800)
 
-# A typical stand of each species at age 80: omit dd0/map to use each species'
-# mean fitting-plot climate (shown in the dd0 and map columns of the result)
+# A typical stand of each species at age 80. dd0 and map are omitted, so each
+# species uses the average climate of the plots used to fit its model
+# (shown in the dd0 and map columns of the result)
 ung_volume(c("black spruce", "Douglas-fir"), age = 80)
 
 # Climate-uncertainty fan (Monte Carlo over dd0 and map)
@@ -83,13 +84,18 @@ every age, use `ung_curve()`.
   run (annual normals containing `MAP`, `DD18`, `DD_18`, `DD_0`), use
   `ung_climate_from_climatena()`; do not pass `DD_0` as `dd0`.
 
-## Species-mean climate and the uncertainty fan
+## Climate used when `dd0` and `map` are omitted, and the uncertainty fan
 
-* Leave `dd0`/`map` out of `ung_volume()` (or `ung_sensitivity()`,
-  `ung_uncertainty()`) and the species mean of the fitting plots
-  (`ung_envelope$dd0_mean`, `$map_mean`) is used, with a message. This gives a
-  *typical stand* of each species for comparing species; it is **not** a site
-  prediction.
+* The authors fitted each species' model to measured field plots (the "fitting
+  plots"). Each plot has a `dd0` and a `map`. If you leave `dd0` and/or `map` out
+  of `ung_volume()` (or `ung_curve()`, `ung_sensitivity()`, `ung_uncertainty()`),
+  the package uses, **for each species, the average `dd0` and the average `map`
+  of that species' fitting plots**. The averages are in
+  `ung_envelope$dd0_mean` and `ung_envelope$map_mean`, a message says which values
+  were used, and they appear in the `dd0` and `map` columns of the result. For
+  example, black spruce uses 2079 degree-days and 965 mm; Douglas-fir uses 2352
+  degree-days and 727 mm. The result is a **typical stand of each species**, not
+  a prediction for a site.
 * `ung_uncertainty()` draws `n` (`dd0`, `map`) pairs from an untruncated bivariate
   normal (bounded at 0) around your climate and reports the median and a central
   interval of volume. By default the SDs are the species' among-plot SDs in the

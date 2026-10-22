@@ -6,3 +6,5 @@
 *.Rcheck/
 .DS_Store
 Thumbs.db
+myfiles/
+Rplots.pdf

@@ -93,11 +93,12 @@
 #'   (case-insensitive); see [ung_species()].
 #' @param age Numeric vector. Stand age in years (> 0).
 #' @param dd0 Numeric vector. Annual degree-days above 0 degrees C (not DD5).
-#'   If `NULL` (default), the species mean of the fitting plots is used
-#'   (`dd0_mean` in [ung_envelope]); see *Species-mean climate*.
+#'   If `NULL` (default), the average `dd0` of the plots used to fit that
+#'   species' model is used (column `dd0_mean` of [ung_envelope]); see
+#'   *Climate used when `dd0` and `map` are omitted*.
 #' @param map Numeric vector. Mean annual precipitation in mm. If `NULL`
-#'   (default), the species mean of the fitting plots is used (`map_mean` in
-#'   [ung_envelope]).
+#'   (default), the average `map` of the plots used to fit that species' model
+#'   is used (column `map_mean` of [ung_envelope]).
 #' @param model One of `"both"` (default), `"Nat1"` or `"Nat2"`.
 #' @param warn Logical. Set to `FALSE` to skip all diagnostic warnings and the
 #'   message about default climate.
@@ -107,17 +108,25 @@
 #'   1, species 2 with age 2, and so on. To predict several species over a range
 #'   of ages, use [ung_curve()], which combines every species with every age.
 #'
-#' @section Species-mean climate:
-#' Leave `dd0` and/or `map` as `NULL` to get a "typical stand" of each species:
-#' the mean climate of the plots that species was fitted to is used, and a
-#' message says so. Volume still depends on climate; the climate values used are
-#' returned in the `dd0` and `map` columns, and they differ between species.
-#' This is a
-#' convenience for comparing species or sketching a curve, **not** a prediction
-#' for a particular site; the fitting-plot mean can be far from the climate of
-#' the stand you care about. For a site, supply its own climate (see
-#' [ung_climate()]) and, to see how much climate uncertainty matters, use
-#' [ung_uncertainty()].
+#' @section Climate used when `dd0` and `map` are omitted:
+#' The authors fitted each species' model to a set of measured field plots (the
+#' "fitting plots"). Each plot has a `dd0` and a `map`. If you leave out `dd0`,
+#' `map` or both, the package uses, for each species, the **average** `dd0` and
+#' the **average** `map` of that species' fitting plots. These averages are
+#' stored in [ung_envelope] (columns `dd0_mean` and `map_mean`). A message
+#' states which values were substituted, and the values are returned in the
+#' `dd0` and `map` columns of the result.
+#'
+#' Because the averages differ between species, two species are predicted under
+#' two different climates. For example, black spruce uses 2079 degree-days and
+#' 965 mm, and Douglas-fir uses 2352 degree-days and 727 mm. Volume still
+#' depends on climate in the usual way.
+#'
+#' The result is a prediction for a **typical stand of each species**, not for
+#' any particular site. It is useful for comparing species or sketching a
+#' curve. For a real stand, supply the climate of its location (see
+#' [ung_climate()]), and use [ung_uncertainty()] or [ung_sensitivity()] to see
+#' how much the climate values matter.
 #'
 #' @return A data.frame of class `ung_volume` with one row per input row:
 #'   `species` (code), `age`, `dd0`, `map` and, depending on `model`,
@@ -137,8 +146,9 @@
 #'   [ung_species()]
 #' @export
 #' @examples
-#' # A typical stand of each species at age 80, at that species' mean
-#' # fitting-plot climate (the climate used is shown in the dd0 and map columns)
+#' # A typical stand of each species at age 80. `dd0` and `map` are omitted, so
+#' # each species uses the average climate of the plots used to fit its model
+#' # (shown in the dd0 and map columns of the result)
 #' ung_volume(c("black spruce", "Douglas-fir"), age = 80)
 #'
 #' # Yield curves for two species: ung_curve() combines every species with every age
@@ -171,8 +181,8 @@ ung_volume <- function(species, age, dd0 = NULL, map = NULL,
 }
 
 # Validate inputs, resolve species names and recycle to a common length.
-# NULL `dd0` / `map` are filled with the species mean of the fitting plots and
-# recorded in the "defaulted" attribute.
+# NULL `dd0` / `map` are filled with the average of the plots used to fit each
+# species' model and recorded in the "defaulted" attribute.
 .prepare_inputs <- function(species, age, dd0 = NULL, map = NULL) {
   codes <- .resolve_species(species)
 
@@ -228,10 +238,12 @@ ung_volume <- function(species, age, dd0 = NULL, map = NULL,
 .note_defaults <- function(x) {
   d <- attr(x, "defaulted")
   if (length(d) > 0L) {
-    message("Using the species mean of the fitting plots for ",
-            paste0("`", d, "`", collapse = " and "),
-            " (see ?ung_envelope). The result is for a typical stand of each ",
-            "species, not for a specific site.")
+    message(paste0("`", d, "`", collapse = " and "),
+            if (length(d) > 1L) " were" else " was", " not supplied. Using, ",
+            "for each species, the average ", paste(d, collapse = " and "),
+            " of the plots used to fit that species' model (see ?ung_envelope). ",
+            "The result is for a typical stand of each species, not for a ",
+            "specific site.")
   }
   invisible(x)
 }
