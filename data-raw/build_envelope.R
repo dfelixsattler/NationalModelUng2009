@@ -15,7 +15,7 @@ nums <- function(x) {
   as.numeric(p[nzchar(p)])
 }
 
-vars <- c(h = 3, ba = 4, v = 5, age = 6, dd0 = 7, map = 8)   # sheet columns
+vars <- c(h = 3, g = 4, v = 5, age = 6, dd0 = 7, map = 8)   # sheet columns
 sp_map <- stats::setNames(NationalModelUng2009::ung_species()$code,
                           NationalModelUng2009::ung_species()$scientific)
 

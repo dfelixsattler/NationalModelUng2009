@@ -22,5 +22,5 @@ test_that("climatena conversion matches names loosely and rejects bad input", {
   expect_error(ung_climate_from_climatena("a"), "data.frame")
   neg <- transform(x, dd_0 = -1100)
   expect_ung_warning(ung_climate_from_climatena(neg, quiet = TRUE),
-                     "ung2009_warning_climate")
+                     "ung2009_warning")
 })

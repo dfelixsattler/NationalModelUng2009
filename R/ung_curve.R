@@ -15,25 +15,25 @@
 #'   [ung_volume()]), one value used for every species, or one value
 #'   per species.
 #'
-#' @details A curve covers more than 10 years of age, so by default
-#'   [ung_volume()] issues the `ung2009_warning_horizon` warning. See the
-#'   section *Intended use and time horizon* in [ung_volume()]. Set
-#'   `warn = FALSE` to hide it.
+#' @details A yield curve covers more than 10 years of age, which is longer than
+#'   the authors designed the models for (see *Intended use and time horizon*
+#'   in [ung_volume()]). This and the other cautions can be listed with
+#'   [ung_check()]. For a simple table of age and volume, for example for the
+#'   Carbon Budget Model, use [ung_yield_table()].
 #'
 #' @return A data.frame of class `ung_volume` (see [ung_volume()]) with one row
 #'   per species and age. Use [plot()] to draw it.
-#' @seealso [ung_volume()], [ung_uncertainty()]
+#' @seealso [ung_yield_table()], [ung_volume()], [ung_uncertainty()]
 #' @export
 #' @examples
-#' curves <- ung_curve(c("black spruce", "Douglas-fir"), age = 10:150,
-#'                     warn = FALSE)
+#' curves <- ung_curve(c("black spruce", "Douglas-fir"), age = 10:150)
 #' plot(curves)
 #'
 #' # One climate for every species
-#' plot(ung_curve(c("white spruce", "jack pine"), dd0 = 2200, map = 600,
-#'                warn = FALSE))
+#' plot(ung_curve(c("white spruce", "jack pine"), dd0 = 2200, map = 600))
 ung_curve <- function(species, age = 10:150, dd0 = NULL, map = NULL,
-                      model = c("both", "Nat1", "Nat2"), warn = TRUE) {
+                      model = c("both", "Nat1", "Nat2"),
+                      nat1_bias_correction = FALSE, warn = TRUE) {
   model <- match.arg(model)
   codes <- .resolve_species(species)
   ns <- length(codes)
@@ -57,5 +57,6 @@ ung_curve <- function(species, age = 10:150, dd0 = NULL, map = NULL,
   ung_volume(codes[s], rep(age, times = ns),
              dd0 = if (is.null(dd0)) NULL else dd0[s],
              map = if (is.null(map)) NULL else map[s],
-             model = model, warn = warn)
+             model = model, nat1_bias_correction = nat1_bias_correction,
+             warn = warn)
 }

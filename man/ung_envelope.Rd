@@ -6,8 +6,8 @@
 \title{Fitting-data summary of the Ung et al. (2009) national models}
 \format{
 A data.frame with 25 rows: \code{species} (code, see \code{\link[=ung_species]{ung_species()}}),
-\code{n} (number of plots), and for each of \code{h} (dominant height, m), \code{ba} (basal
-area, m2/ha), \code{v} (volume, m3/ha), \code{age} (years), \code{dd0} (degree-days above
+\code{n} (number of plots), and for each of \code{h} (dominant height H, m), \code{g} (basal
+area G, m2/ha), \code{v} (volume V, m3/ha), \code{age} (years), \code{dd0} (degree-days above
 0 degrees C) and \code{map} (mm): \verb{<var>_mean}, \verb{<var>_sd}, \verb{<var>_min} and
 \verb{<var>_max}.
 }
@@ -20,9 +20,9 @@ ung_envelope
 }
 \description{
 Per-species mean, standard deviation, minimum and maximum of the plot
-variables the models were fitted to. \code{\link[=ung_volume]{ung_volume()}} uses the minima and
-maxima to warn when age, climate or predicted basal area or volume fall
-outside the data (extrapolation). The paper publishes these only for black
+variables the models were fitted to. \code{\link[=ung_volume]{ung_volume()}} and \code{\link[=ung_check]{ung_check()}} use the
+minima and maxima to flag when age, climate or predicted basal area (G) or
+volume (V) fall outside the data (extrapolation). The paper publishes these only for black
 spruce, jack pine and trembling aspen (its Table 2); the other 22 species come
 from the \code{DATASUMMARY} sheet of the developers' spreadsheet.
 }

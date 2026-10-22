@@ -2,6 +2,7 @@
 
 S3method(plot,ung_uncertainty)
 S3method(plot,ung_volume)
+export(ung_check)
 export(ung_climate)
 export(ung_climate_from_climatena)
 export(ung_curve)
@@ -9,3 +10,4 @@ export(ung_sensitivity)
 export(ung_species)
 export(ung_uncertainty)
 export(ung_volume)
+export(ung_yield_table)

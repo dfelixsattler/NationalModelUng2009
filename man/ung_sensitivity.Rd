@@ -16,14 +16,14 @@ ung_sensitivity(
 }
 \arguments{
 \item{species}{Character vector. Species code, scientific name or common name
-(case-insensitive); see \code{\link[=ung_species]{ung_species()}}.}
+(any capitalisation); see \code{\link[=ung_species]{ung_species()}}.}
 
-\item{age}{Numeric vector. Stand age in years (> 0).}
+\item{age}{Numeric vector. Stand age in years (0 or more).}
 
-\item{dd0}{Numeric vector. Annual degree-days above 0 degrees C (not DD5).
-If \code{NULL} (default), the average \code{dd0} of the plots used to fit that
-species' model is used (column \code{dd0_mean} of \link{ung_envelope}); see
-\emph{Climate used when \code{dd0} and \code{map} are omitted}.}
+\item{dd0}{Numeric vector. Degree-days above 0 degrees C in a year (see
+\emph{Climate inputs}). If \code{NULL} (default), the average \code{dd0} of the plots used
+to fit that species' model is used (column \code{dd0_mean} of \link{ung_envelope});
+see \emph{Climate used when \code{dd0} and \code{map} are omitted}.}
 
 \item{map}{Numeric vector. Mean annual precipitation in mm. If \code{NULL}
 (default), the average \code{map} of the plots used to fit that species' model
@@ -55,9 +55,9 @@ The Ung et al. (2009) parameters make predicted volume respond strongly, and
 sometimes in opposite directions, to modest differences in the climate
 inputs. This function re-runs the model with
 \verb{dd0 +/- d_dd0} and \verb{map +/- d_map} and reports the largest relative
-change in volume. \code{\link[=ung_volume]{ung_volume()}} uses it to issue a warning when the change
-exceeds 15 \%. The percentage depends on the species and the age, not on the
-climate values themselves.
+change in volume. \code{\link[=ung_check]{ung_check()}} uses it to flag predictions whose change
+exceeds 15 \% (a rule of thumb, not a value from the paper). The percentage
+depends on the species and the age, not on the climate values themselves.
 
 Percent changes are \code{NA} where predicted volume is below 1 m3/ha, because a
 relative change is not meaningful for a near-empty stand.

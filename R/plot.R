@@ -4,25 +4,26 @@
 #' combination and one line type per model.
 #'
 #' @param x An object returned by [ung_volume()].
-#' @param what Variable to plot: `"V"` (volume, default), or `"H"` / `"BA"`
-#'   (Nat1 height and basal area only).
+#' @param what Variable to plot: `"V"` (volume, default), or `"H"` / `"G"`
+#'   (Nat1 dominant height and basal area only).
 #' @param ... Passed to [graphics::plot()].
 #' @return `x`, invisibly.
 #' @export
 #' @examples
 #' d <- ung_volume("white spruce", 5:200, dd0 = 1800, map = 700, warn = FALSE)
 #' plot(d)
-plot.ung_volume <- function(x, what = c("V", "H", "BA"), ...) {
+plot.ung_volume <- function(x, what = c("V", "H", "G"), ...) {
   what <- match.arg(what)
   cols <- switch(what,
     V = intersect(c("V_Nat1", "V_Nat2"), names(x)),
     H = intersect("H_Nat1", names(x)),
-    BA = intersect("BA_Nat1", names(x))
+    G = intersect("G_Nat1", names(x))
   )
   if (length(cols) == 0L) {
     stop("`x` has no ", what, " predictions (check the `model` used).", call. = FALSE)
   }
-  units <- c(V = "Volume (m3/ha)", H = "Height (m)", BA = "Basal area (m2/ha)")[[what]]
+  units <- c(V = "Volume V (m3/ha)", H = "Dominant height H (m)",
+             G = "Basal area G (m2/ha)")[[what]]
 
   # One group per species x climate combination, labelled in plain words
   info <- .curve_groups(x)

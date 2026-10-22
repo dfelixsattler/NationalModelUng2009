@@ -1,11 +1,26 @@
-#' Climate-uncertainty fan for predicted volume
+#' Uncertainty interval for predicted volume
 #'
-#' Propagates uncertainty in the climate inputs through the models by Monte
-#' Carlo sampling. For each stand, `n` pairs of (`dd0`, `map`) are drawn from a
-#' bivariate normal distribution centred on the supplied climate (or, if `dd0`
-#' or `map` is omitted, on the average of the plots used to fit that species'
-#' model; see [ung_volume()]). Volume is predicted for every draw, and the
-#' median and a central interval of the predictions are returned.
+#' Shows how much predicted volume could change because of two sources of
+#' uncertainty: the climate inputs, and the rounding of the published model
+#' parameters. It works by simulation (Monte Carlo). For each stand, `n` pairs
+#' of (`dd0`, `map`) are drawn from a normal distribution centred on the
+#' supplied climate (or, if `dd0` or `map` is omitted, on the average of the
+#' plots used to fit that species' model; see [ung_volume()]). With
+#' `rounding = TRUE`, each draw also uses slightly different parameters (see
+#' below). Volume is predicted for every draw, and the median and a central
+#' interval of the predictions are returned.
+#'
+#' @section Rounding of the parameters:
+#' The authors published every parameter with only 4 decimal places, and the
+#' unrounded values are not available. Volume is the exponential of a sum of
+#' many terms, some of them multiplied by large climate values, so these small
+#' rounding errors add up. With `rounding = TRUE` (the default), each draw
+#' picks every parameter at random within half a unit of its last printed digit
+#' (for example, 0.1234 becomes a value between 0.12335 and 0.12345). The
+#' resulting spread is the volume uncertainty caused by rounding alone. It is
+#' typically a few percent for Nat2 and larger for Nat1 (see *Parameters are
+#' rounded* in [ung_volume()]). Set `rounding = FALSE` to see climate
+#' uncertainty alone.
 #'
 #' @section What the spread means:
 #' * By default the standard deviations are those of `dd0` and `map` among the
@@ -16,9 +31,12 @@
 #'   among-plot climate difference?". If you know the uncertainty of your own
 #'   climate values (for example from a climate-product comparison), pass it as
 #'   `sd_dd0` and `sd_map`.
-#' * Only **climate uncertainty** is propagated. Parameter uncertainty and
-#'   residual (plot-to-plot) variation of the models are not included, so the
-#'   interval is not a prediction interval for a stand's volume.
+#' * Only **climate uncertainty** and **parameter rounding** are included. The
+#'   statistical uncertainty of the fitted parameters is not: standard errors
+#'   exist for Nat1 only, and without the correlations between parameters they
+#'   cannot be combined correctly. Plot-to-plot variation around the models is
+#'   not included either, so the interval is narrower than the range of volumes
+#'   you would see in real stands of that age and climate.
 #' * Draws are **untruncated** normal values, bounded below at 0 because
 #'   degree-days and precipitation cannot be negative. `dd0` and `map` are
 #'   independent unless you set `cor`; their correlation in the fitting data is
@@ -36,9 +54,11 @@
 #'   Default 0.
 #' @param interval Central probability of the interval, in (0, 1). Default 0.9
 #'   (5th to 95th percentile).
+#' @param rounding Logical. `TRUE` (default) also varies the parameters within
+#'   their rounding error (see *Rounding of the parameters*).
 #' @param seed Optional integer for reproducible draws. The global random
 #'   number state is restored afterwards.
-#' @param warn Logical. `FALSE` skips the diagnostic warnings and messages of
+#' @param warn Logical. `FALSE` skips the warning and messages of
 #'   [ung_volume()] for the central prediction.
 #'
 #' @return A data.frame of class `ung_uncertainty` with one row per input row
@@ -59,8 +79,12 @@
 ung_uncertainty <- function(species, age, dd0 = NULL, map = NULL,
                             model = c("both", "Nat1", "Nat2"),
                             n = 1000, sd_dd0 = NULL, sd_map = NULL, cor = 0,
-                            interval = 0.9, seed = NULL, warn = TRUE) {
+                            interval = 0.9, rounding = TRUE,
+                            nat1_bias_correction = FALSE, seed = NULL,
+                            warn = TRUE) {
   model <- match.arg(model)
+  .check_logical(rounding, "rounding")
+  .check_logical(nat1_bias_correction, "nat1_bias_correction")
   if (!is.numeric(n) || length(n) != 1L || is.na(n) || n < 10) {
     stop("`n` must be a single number of at least 10.", call. = FALSE)
   }
@@ -84,7 +108,8 @@ ung_uncertainty <- function(species, age, dd0 = NULL, map = NULL,
   sd_map <- .resolve_sd(sd_map, env$map_sd, rows, "sd_map")
 
   # Central prediction (also runs the usual diagnostics)
-  central <- ung_volume(x$species, x$age, x$dd0, x$map, model = model, warn = warn)
+  central <- ung_volume(x$species, x$age, x$dd0, x$map, model = model,
+                        nat1_bias_correction = nat1_bias_correction, warn = warn)
 
   if (!is.null(seed)) {
     had_seed <- exists(".Random.seed", envir = globalenv(), inherits = FALSE)
@@ -103,7 +128,10 @@ ung_uncertainty <- function(species, age, dd0 = NULL, map = NULL,
   d <- x[idx, c("species", "age", "dd0", "map"), drop = FALSE]
   d$dd0 <- pmax(x$dd0[idx] + sd_dd0[idx] * z1, 0)
   d$map <- pmax(x$map[idx] + sd_map[idx] * (cor * z1 + sqrt(1 - cor^2) * z2), 0)
-  pred <- .predict(d, model)
+  p <- NationalModelUng2009::ung_parameters
+  p <- p[match(d$species, p$species), , drop = FALSE]
+  if (rounding) p <- .perturb_rounding(p)
+  pred <- .predict(d, model, p = p, nat1_bias_correction = nat1_bias_correction)
   outside <- d$dd0 < env$dd0_min[idx] | d$dd0 > env$dd0_max[idx] |
     d$map < env$map_min[idx] | d$map > env$map_max[idx]
   prop_outside <- colMeans(matrix(outside, nrow = n))
@@ -132,6 +160,26 @@ ung_uncertainty <- function(species, age, dd0 = NULL, map = NULL,
   attr(out, "n") <- n
   class(out) <- c("ung_uncertainty", "data.frame")
   out
+}
+
+# Rounding of the published parameters: each coefficient is only known to the
+# precision it was printed with. Most have 4 decimal places (for example
+# -139.8560). A few large values were printed with only 4 significant digits
+# (for example 182, -757, -159.3); these are recognised as values of 100 or more
+# with at most one decimal. Each draw gets its own value, picked at random
+# within half a unit of the last printed digit. Zero means the term was dropped
+# from the model, so it is left at zero. Duan factors are left alone
+# (their rounding effect is negligible).
+.perturb_rounding <- function(p) {
+  cols <- grep("^[hgv][0-9]{2}$", names(p), value = TRUE)
+  for (cc in cols) {
+    v <- p[[cc]]
+    short <- !is.na(v) & abs(v) >= 100 & abs(v * 10 - round(v * 10)) < 1e-8
+    half <- ifelse(short, 0.5 * 10^-(3 - floor(log10(abs(v)))), 5e-5)
+    half[is.na(v) | v == 0] <- 0
+    p[[cc]] <- v + stats::runif(length(v), -half, half)
+  }
+  p
 }
 
 # One SD per stand: NULL -> species default; otherwise validate and recycle.

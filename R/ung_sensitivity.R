@@ -11,9 +11,9 @@
 #' sometimes in opposite directions, to modest differences in the climate
 #' inputs. This function re-runs the model with
 #' `dd0 +/- d_dd0` and `map +/- d_map` and reports the largest relative
-#' change in volume. [ung_volume()] uses it to issue a warning when the change
-#' exceeds 15 %. The percentage depends on the species and the age, not on the
-#' climate values themselves.
+#' change in volume. [ung_check()] uses it to flag predictions whose change
+#' exceeds 15 % (a rule of thumb, not a value from the paper). The percentage
+#' depends on the species and the age, not on the climate values themselves.
 #'
 #' Percent changes are `NA` where predicted volume is below 1 m3/ha, because a
 #' relative change is not meaningful for a near-empty stand.

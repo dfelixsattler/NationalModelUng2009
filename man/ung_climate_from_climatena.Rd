@@ -28,13 +28,18 @@ GYClimTransferCFS package, or by running the program yourself.
 \details{
 The table must contain the annual variables \code{MAP}, \code{DD18}, \code{DD_18} and \code{DD_0}
 (names are matched without regard to capital letters). With the ClimateNA
-command line, request the annual variable set (\verb{/Y}). \code{DD_0} and \code{DD_18} are
-degree-days \emph{below} 0 and 18 degrees C, \code{DD18} is degree-days above 18 degrees
-C; none of them is the \code{dd0} the models need. \code{dd0} is derived as
-\code{dd0 = (DD18 - DD_18) + 365 * 18 + DD_0}. ClimateNA calculates its degree-day
-variables from monthly temperatures with regression equations, so this is an
-approximation whose error has not been validated against the climate used to
-fit the models (the same caveat as for \code{\link[=ung_climate]{ung_climate()}}). One consistency check
+command line, request the annual variable set (\verb{/Y}).
+
+\strong{Beware the names.} In ClimateNA, \code{DD_0} is degree-days \emph{below} 0 degrees
+C (how cold the winter is), the opposite of the \code{dd0} the models need, and
+\code{DD5} is degree-days above 5 degrees C. Never pass either as \code{dd0}. Instead,
+\code{dd0} is calculated from three ClimateNA variables, degree-days above 18
+degrees C (\code{DD18}), below 18 degrees C (\code{DD_18}) and below 0 degrees C
+(\code{DD_0}), as \code{dd0 = (DD18 - DD_18) + 365 * 18 + DD_0}; the reasoning is
+explained in \code{\link[=ung_climate]{ung_climate()}}. ClimateNA estimates its degree-day variables
+from monthly temperatures with regression equations, so this is an
+approximation that has not been compared with the climate the authors used
+to fit the models (the same caveat as for \code{\link[=ung_climate]{ung_climate()}}). One consistency check
 was made: for a point in central Saskatchewan (1981-2010 normals, ClimateNA
 7.60), \code{dd0} from the annual formula was 2194, and \code{dd0} rebuilt from
 ClimateNA's monthly variables (\code{DD_0_xx} plus days times \code{Tave}) was 2178, a

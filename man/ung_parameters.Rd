@@ -8,12 +8,13 @@
 A data.frame with 25 rows and 26 columns:
 \describe{
 \item{species}{Species code, see \code{\link[=ung_species]{ung_species()}}.}
-\item{h10-h22}{Nat1 height parameters: \code{h1 = h10 + h11 * dd0 + h12 * map},
-\code{h2 = h20 + h21 * dd0 + h22 * map}.}
-\item{g10-g22}{Nat1 basal-area parameters, same structure as \code{h}.}
-\item{v30, v31, v32}{Nat1 volume parameters: intercept, ln(H) and ln(BA)
-coefficients.}
-\item{CDh, CDg, CDv}{Nat1 Duan correction factors.}
+\item{h10-h22}{Nat1 dominant height (H) parameters:
+\code{h1 = h10 + h11 * dd0 + h12 * map}, \code{h2 = h20 + h21 * dd0 + h22 * map}.}
+\item{g10-g22}{Nat1 basal area (G) parameters, same structure as \code{h}.}
+\item{v30, v31, v32}{Nat1 volume parameters: intercept, and the
+coefficients of ln(H) and ln(G).}
+\item{CDh, CDg, CDv}{Nat1 Duan correction factors (see \emph{Duan correction
+factor} in \code{\link[=ung_volume]{ung_volume()}}).}
 \item{v10-v22}{Nat2 volume parameters, same structure as \code{h}.}
 \item{CDv2}{Nat2 Duan correction factor.}
 }
@@ -26,12 +27,22 @@ The Forestry Chronicle 85(1): 57-64. \doi{10.5558/tfc85057-1}
 ung_parameters
 }
 \description{
-One row per species. Nat1 parameters were transcribed from the CTAE-derived R
-implementation of Ung et al. (2009) and verified cell by cell against four
+One row per species. The parameters were read from an R implementation of
+Ung et al. (2009) supplied with the developers' files
+(\code{Ung_stand_volume_function.R}) and checked value by value against four
 files from the model developers (\code{Parms.csv}, \code{Ung2009_NatOneWide.csv},
-\code{NatOneWide.csv}, \code{Fit.csv}). Nat2 parameters were verified against sheet \code{V}
-of the developers' spreadsheet (all 25 species identical). The height and
-basal-area sheets of that spreadsheet hold slightly different, unpublished
-individual-equation estimates; they are \strong{not} used here.
+\code{NatOneWide.csv}, \code{Fit.csv}) and against Tables 4 and 5 of the paper for
+black spruce, jack pine and trembling aspen. Nat2 parameters were also
+checked against sheet \code{V} of the developers' spreadsheet (all 25 species
+identical). The height (H) and basal-area (G) sheets of that spreadsheet hold
+slightly different, unpublished estimates from fitting each equation on its
+own; they are \strong{not} used here.
+}
+\details{
+\strong{Rounding.} All parameters were published with only 4 decimal places (a few
+large values with 4 significant digits), and the unrounded estimates are not
+available. This rounding alone makes predicted volume uncertain by a few
+percent; see \emph{Parameters are rounded} in \code{\link[=ung_volume]{ung_volume()}} and
+\code{\link[=ung_uncertainty]{ung_uncertainty()}}.
 }
 \keyword{datasets}

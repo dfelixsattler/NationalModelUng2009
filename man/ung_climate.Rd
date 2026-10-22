@@ -26,25 +26,32 @@ the \href{https://github.com/bcgov/climr}{climr} package, so the result can be
 passed straight to \code{\link[=ung_volume]{ung_volume()}}.
 }
 \details{
-\strong{Naming trap:} in \code{climr} and ClimateNA, \code{DD_0} / \code{DDsub0} is degree-days
-\emph{below} 0 degrees C (a winter-cold measure). It is \strong{not} the \code{dd0}
-(degree-days \emph{above} 0 degrees C) the models need, and neither package
-provides the latter directly. \code{dd0} is therefore derived from variables
-\code{climr} does provide, using \code{sum(T - 18) = DD18 - DDsub18} over a 365-day
-year and \code{DD>0 = sum(T) + DD<0}:
+\strong{Beware the names.} The models need degree-days \emph{above} 0 degrees C
+(\code{dd0}). climr does not provide that variable. Its \code{DDsub0} (called \code{DD_0}
+in ClimateNA) is degree-days \emph{below} 0 degrees C, a measure of how cold the
+winter is: the opposite quantity. Never pass \code{DDsub0}, \code{DD_0} or \code{DD5} as
+\code{dd0}. See the table in the \emph{Climate inputs} section of \code{\link[=ung_volume]{ung_volume()}}.
+
+\strong{How \code{dd0} is calculated.} climr provides degree-days above 18 degrees C
+(\code{DD18}), below 18 degrees C (\code{DDsub18}) and below 0 degrees C (\code{DDsub0}).
+In words: \code{DD18 - DDsub18} is the yearly total of (daily temperature minus
+18); adding \code{365 * 18} gives the yearly total of daily temperature; adding
+back the below-zero degree-days (\code{DDsub0}) removes the effect of the cold
+days, leaving degree-days above 0 degrees C:
 \code{dd0 = (DD18 - DDsub18) + 365 * 18 + DDsub0}.
-The identity is exact for daily temperatures, but \code{climr} computes each
-degree-day variable from monthly mean temperature with separate empirical
-regressions, so the derived \code{dd0} is an approximation whose error has not
-been validated against the degree-days used to fit the models.
+This would be exact with daily temperatures. climr, however, estimates each
+degree-day variable from monthly mean temperatures with its own regression
+equation, so the calculated \code{dd0} is an approximation. It has not been
+compared with the degree-days the authors used to fit the models.
 }
 \section{Differences from the paper's climate}{
 
-Ung et al. (2009) fitted the models to interpolated climate with
-inter-annual variability restored (McKenney et al. 2001); this is not the
-same product or period as the \code{climr} 1981-2010 normals. Expect differences
-in \code{dd0} and \code{map} which, because the models can be sensitive to climate (see
-\code{\link[=ung_sensitivity]{ung_sensitivity()}}), can matter. ClimateNA/ClimateBC output cannot simply be
+Ung et al. (2009) used interpolated long-term climate "to which inter-annual
+variability has been restored" (McKenney et al. 2001; see \emph{Climate inputs}
+in \code{\link[=ung_volume]{ung_volume()}} for what this means). That is not the same product or
+period as the climr 1981-2010 normals. Expect some differences in \code{dd0} and
+\code{map}; because predicted volume can be sensitive to climate (see
+\code{\link[=ung_sensitivity]{ung_sensitivity()}}), they can matter. ClimateNA/ClimateBC output cannot simply be
 substituted: their \code{DD_0} is degree-days below 0 degrees C. Use
 \code{\link[=ung_climate_from_climatena]{ung_climate_from_climatena()}}, which derives \code{dd0} from \code{DD18}, \code{DD_18} and
 \code{DD_0}.

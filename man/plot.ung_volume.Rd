@@ -4,13 +4,13 @@
 \alias{plot.ung_volume}
 \title{Plot predicted yield curves}
 \usage{
-\method{plot}{ung_volume}(x, what = c("V", "H", "BA"), ...)
+\method{plot}{ung_volume}(x, what = c("V", "H", "G"), ...)
 }
 \arguments{
 \item{x}{An object returned by \code{\link[=ung_volume]{ung_volume()}}.}
 
-\item{what}{Variable to plot: \code{"V"} (volume, default), or \code{"H"} / \code{"BA"}
-(Nat1 height and basal area only).}
+\item{what}{Variable to plot: \code{"V"} (volume, default), or \code{"H"} / \code{"G"}
+(Nat1 dominant height and basal area only).}
 
 \item{...}{Passed to \code{\link[graphics:plot]{graphics::plot()}}.}
 }

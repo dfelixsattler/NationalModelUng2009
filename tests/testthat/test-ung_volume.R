@@ -3,7 +3,7 @@
 
 test_that("predictions match the original implementation", {
   a <- ung_volume("POPU.TRE", 50, 2200, 750, warn = FALSE)
-  expect_equal(c(a$H_Nat1, a$BA_Nat1, a$V_Nat1, a$V_Nat2),
+  expect_equal(c(a$H_Nat1, a$G_Nat1, a$V_Nat1, a$V_Nat2),
                c(17.8, 24.0, 162.5, 190.3), tolerance = 0.01)
 
   b <- ung_volume("PICE.MAR", 80, 2100, 800, warn = FALSE)
@@ -33,10 +33,31 @@ test_that("inputs are recycled, and bad inputs are rejected", {
   expect_equal(nrow(d), 10)
   expect_named(d, c("species", "age", "dd0", "map", "V_Nat2"))
   expect_error(ung_volume("PICE.MAR", 1:3, 2000:2001, 800), "length")
-  expect_error(ung_volume("PICE.MAR", 0, 2000, 800), "greater than 0")
+  expect_error(ung_volume("PICE.MAR", -1, 2000, 800), "negative")
   expect_error(ung_volume("PICE.MAR", 50, -5, 800), "negative")
   expect_error(ung_volume("PICE.MAR", "50", 2000, 800), "numeric")
+  expect_error(ung_volume("PICE.MAR", 50, 2000, 800, nat1_bias_correction = NA),
+               "nat1_bias_correction")
   expect_true(is.na(suppressWarnings(ung_volume("PICE.MAR", NA, 2000, 800)$V_Nat1)))
+})
+
+test_that("age 0 gives zero height, basal area and volume", {
+  d <- ung_volume("PICE.MAR", c(0, 50), 2000, 800, warn = FALSE)
+  expect_equal(unlist(d[1, c("H_Nat1", "G_Nat1", "V_Nat1", "V_Nat2")]),
+               c(H_Nat1 = 0, G_Nat1 = 0, V_Nat1 = 0, V_Nat2 = 0))
+  expect_gt(d$V_Nat2[2], 0)
+})
+
+test_that("Nat1 bias correction raises Nat1 volume only, by a factor above 1", {
+  plain <- ung_volume("PICE.MAR", 80, 2079, 965, warn = FALSE)
+  fixed <- ung_volume("PICE.MAR", 80, 2079, 965, nat1_bias_correction = TRUE,
+                      warn = FALSE)
+  p <- ung_parameters[ung_parameters$species == "PICE.MAR", ]
+  factor <- 1 + (p$v31^2 * 2 * log(p$CDh) + p$v32^2 * 2 * log(p$CDg)) / 2
+  expect_equal(fixed$V_Nat1, plain$V_Nat1 * factor)
+  expect_equal(fixed$V_Nat2, plain$V_Nat2)
+  expect_equal(fixed$H_Nat1, plain$H_Nat1)
+  expect_true(attr(fixed, "nat1_bias_correction"))
 })
 
 test_that("a typical in-range stand gives no warnings", {
@@ -70,27 +91,44 @@ test_that("ung_curve combines every species with every age", {
   expect_silent(plot(d))
 })
 
-test_that("diagnostic warnings fire with their own classes", {
-  expect_ung_warning(ung_volume("POPU.TRE", 5, 2200, 750), "ung2009_warning_age")
-  expect_ung_warning(ung_volume("POPU.TRE", 300, 2200, 750), "ung2009_warning_age")
-  expect_ung_warning(ung_volume("PICE.MAR", 80, 1000, 800), "ung2009_warning_climate")
-  expect_ung_warning(ung_volume("THUJ.OCC", 80, 2100, 800), "ung2009_warning_sensitivity")
-  expect_ung_warning(ung_volume("THUJ.OCC", 80, 2100, 800), "ung2009_warning_models")
-  expect_ung_warning(ung_volume("PINU.CON", 80, 3500, 2500), "ung2009_warning_output")
-  expect_ung_warning(ung_volume("POPU.TRE", NA, 2200, 750), "ung2009_warning_na")
-  # Specific classes can be silenced individually, and warn = FALSE silences all
-  expect_no_warning(ung_volume("POPU.TRE", 5, 2200, 750, warn = FALSE))
+test_that("ung_volume gives at most one warning, naming only actionable problems", {
+  w <- character()
+  withCallingHandlers(
+    ung_volume(c("POPU.TRE", "PICE.MAR", "PINU.CON"), c(300, 80, 80),
+               c(2200, 1000, 3500), c(750, 800, 2500)),
+    warning = function(cnd) {
+      w <<- c(w, conditionMessage(cnd))
+      expect_s3_class(cnd, "ung2009_warning")
+      invokeRestart("muffleWarning")
+    }
+  )
+  expect_length(w, 1)
+  expect_match(w, "older than", fixed = TRUE)
+  expect_match(w, "ung_check()", fixed = TRUE)
+  # A normal yield curve inside the data gives no warning at all
+  expect_no_warning(ung_curve("PICE.MAR", seq(0, 150, by = 10), 2079, 965))
+  expect_no_warning(ung_volume("POPU.TRE", 300, 2200, 750, warn = FALSE))
 })
 
-test_that("horizon warning flags yield curves but not single ages or stands", {
-  curve_ages <- seq(20, 100, by = 20)
-  expect_ung_warning(ung_volume("PICE.MAR", curve_ages, 2100, 800),
-                     "ung2009_warning_horizon")
-  # A span of exactly 10 years is within the design horizon
-  expect_no_warning(ung_volume("PICE.MAR", c(70, 80), 2100, 800))
-  # Different stands (different climate) are not one projection
-  expect_no_warning(ung_volume("PICE.MAR", c(40, 90), c(2000, 2200), 800))
-  expect_no_warning(ung_volume("PICE.MAR", curve_ages, 2100, 800, warn = FALSE))
+test_that("ung_check lists every check and flags the right rows", {
+  ck <- ung_check(ung_volume("PICE.MAR", seq(0, 200, by = 10), 2079, 965,
+                             warn = FALSE))
+  expect_named(ck, c("check", "rows_flagged", "rows_total", "meaning"))
+  expect_true(all(c("missing_input", "older_than_data", "climate_outside_data",
+                    "output_beyond_data", "young_age", "long_horizon",
+                    "sensitive_to_climate", "models_disagree") %in% ck$check))
+  expect_equal(ck$rows_flagged[ck$check == "long_horizon"], 21)
+  expect_equal(ck$rows_flagged[ck$check == "young_age"], 0)
+
+  r <- ung_check(ung_volume("THUJ.OCC", c(5, 80), 2100, 800, warn = FALSE),
+                 rows = TRUE)
+  expect_equal(r$young_age, c(TRUE, FALSE))
+  expect_true(r$sensitive_to_climate[2])
+  expect_true(r$models_disagree[2])
+  # A single stand is not a long projection
+  expect_false(ung_check(ung_volume("PICE.MAR", 80, 2079, 965, warn = FALSE),
+                         rows = TRUE)$long_horizon)
+  expect_error(ung_check(data.frame(a = 1)), "species")
 })
 
 test_that("sensitivity table has the documented structure and values", {
@@ -110,6 +148,37 @@ test_that("plot method runs for one and several curves", {
   expect_no_error(plot(d))
   expect_error(plot(ung_volume("PICE.MAR", 50, 2000, 800, model = "Nat2", warn = FALSE), what = "H"),
                "no H predictions")
+  expect_no_error(plot(ung_curve("PICE.MAR", 0:100, 2000, 800, warn = FALSE), what = "G"))
+})
+
+test_that("ung_yield_table gives a simple long or wide table, Nat2 by default", {
+  # Default ages run to 250, past the oldest fitted black spruce plot
+  expect_warning(tab <- ung_yield_table("PICE.MAR", dd0 = 2079, map = 965),
+                 "older than")
+  expect_named(tab, c("species", "dd0", "map", "age", "volume"))
+  expect_equal(tab$age, seq(0, 250, by = 10))
+  expect_equal(tab$volume[1], 0)
+  expect_equal(attr(tab, "model"), "Nat2")
+  expect_equal(tab$volume, ung_curve("PICE.MAR", seq(0, 250, by = 10), 2079, 965,
+                                     model = "Nat2", warn = FALSE)$V_Nat2)
+
+  w <- ung_yield_table(c("PICE.MAR", "PINU.BAN", "PICE.MAR"), age = c(0, 50, 100),
+                       dd0 = c(2079, 2179, 1800), map = c(965, 772, 600),
+                       model = "Nat1", format = "wide", warn = FALSE)
+  expect_equal(nrow(w), 3)
+  expect_named(w, c("species", "dd0", "map", "vol_0", "vol_50", "vol_100"))
+  expect_equal(w$vol_50[2], ung_volume("PINU.BAN", 50, 2179, 772, warn = FALSE)$V_Nat1)
+
+  u <- ung_yield_table("PINU.BAN", age = c(0, 60), dd0 = 2179, map = 772,
+                       uncertainty = TRUE, n = 50, seed = 1, warn = FALSE)
+  expect_named(u, c("species", "dd0", "map", "age", "volume", "lower", "upper"))
+  expect_true(all(u$lower <= u$upper))
+  uw <- ung_yield_table("PINU.BAN", age = c(0, 60), dd0 = 2179, map = 772,
+                        uncertainty = TRUE, format = "wide", n = 50, seed = 1,
+                        warn = FALSE)
+  expect_equal(uw$statistic, c("volume", "lower", "upper"))
+  expect_equal(uw$vol_60, c(u$volume[2], u$lower[2], u$upper[2]))
+  expect_s3_class(ung_check(u), "data.frame")
 })
 
 test_that("ung_climate returns dd0 and map from climr (opt-in, needs network)", {

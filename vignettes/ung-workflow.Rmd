@@ -13,351 +13,242 @@ knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 6,
 library(NationalModelUng2009)
 ```
 
-## What this package does
+## What this workflow provides
 
-The package predicts the **gross merchantable volume** of a forest stand
-(cubic metres of wood per hectare, m³/ha) using the national models of Ung et
-al. (2009). A stand here is an even-aged group of trees in which one species
-makes up at least 75 % of the basal area.
+This package predicts gross merchantable volume in cubic metres per hectare
+(m3/ha) for the national models of Ung et al. (2009). Gross merchantable
+volume is the volume of live trees larger than 9 cm in diameter at breast
+height.
 
-A prediction needs four inputs:
+This workflow is for Carbon Budget Model (CBM) users and researchers who need
+a volume-by-age curve for an area of Canada. The main output is a yield table:
+one volume for each age, species, and climate. The table starts at age 0,
+where volume is defined as 0.
 
-| Input | Meaning | Unit |
-| --- | --- | --- |
-| `species` | The tree species | code, scientific name or common name |
-| `age` | Age of the stand | years |
-| `dd0` | Degree-days above 0 °C in one year | degree-days |
-| `map` | Total precipitation in one year | mm |
+## 1. Choose a species and climate
 
-`dd0` is the sum, over all days of a year, of the amount by which the daily
-mean temperature is above 0 °C. It is **not** the same as `DD5` (degree-days
-above 5 °C), and it is **not** the variable called `DD_0` in ClimateNA or
-`climr`, which measures degree-days *below* 0 °C. Using either of those
-instead gives a wrong answer without any error message.
-
-This document follows one stand through six steps:
-
-1. Describe the stand and its location.
-2. Choose a model.
-3. Obtain `dd0` and `map` for the location.
-4. Run the prediction.
-5. Read the warnings.
-6. Test how much the answer depends on the climate values.
-
-## Step 1. Describe the stand and its location
-
-The example stand is a white spruce stand, 80 years old, in the boreal forest
-of Saskatchewan.
-
-```{r stand}
-stand <- list(
-  species = "white spruce",
-  age     = 80,
-  lon     = -105.5,   # decimal degrees; negative in western Canada
-  lat     = 54.1,     # decimal degrees
-  elev    = 500       # metres above sea level
-)
-```
-
-The package supports 25 species. List them with `ung_species()`. This command
-shows the spruces:
+Choose a species by its common name, scientific name, or package code. This
+example uses black spruce. The package can list the accepted names.
 
 ```{r species}
-sp <- ung_species()
-sp[grepl("spruce", sp$common, ignore.case = TRUE), ]
+species <- "black spruce"
+head(ung_species())
 ```
 
-The `species` argument accepts any one of the three columns (`code`,
-`scientific`, `common`). Capital letters do not matter.
+Supply climate values directly when you have them for the area. `dd0` means
+degree-days above 0 degrees C: for each day, add the amount by which the mean
+temperature is above 0 degrees C. `map` means mean annual precipitation in
+millimetres.
 
-## Step 2. Choose a model
-
-The package contains two models. Both give volume.
-
-* **Nat1** predicts dominant height, then basal area, and then calculates
-  volume from those two values. Besides volume it returns height (`H_Nat1`)
-  and basal area (`BA_Nat1`).
-* **Nat2** predicts volume directly from age and climate. It returns volume
-  only (`V_Nat2`).
-
-This package does not choose between the models for you. The default,
-`model = "both"`, returns both volumes so that you can compare them. If the
-two volumes differ by more than 30 %, the package issues a warning (see
-step 5). Use `model = "Nat1"` or `model = "Nat2"` when you need only one.
-
-Choose Nat1 if you also need height or basal area. Otherwise, report both
-volumes, or state which model you used.
-
-## Step 3. Obtain `dd0` and `map` for the location
-
-The models need `dd0` and `map` for the location. There are three ways to
-obtain them. Choose one.
-
-**Option A: `climr` (needs an internet connection).** The function
-`ung_climate()` looks up the climate of a location with the `climr` package.
-The first call downloads climate data, which can take several minutes.
-
-```{r climate-climr, eval = FALSE}
-# remotes::install_github("bcgov/climr")   # once, if climr is not installed
-site <- ung_climate(lon = stand$lon, lat = stand$lat, elev = stand$elev)
+```{r climate-values}
+dd0 <- 2079
+map <- 965
 ```
 
-**Option B: a local copy of ClimateNA or ClimateBC (no download).** Run the
-program for the location and request a climate normal. The
-`run_climatena()` function of the GYClimTransferCFS package does this and
-returns a table. The function `ung_climate_from_climatena()` then converts the
-table to `dd0` and `map`. The table must contain the annual variables `MAP`,
-`DD18`, `DD_18` and `DD_0`. Use `run_climatebc()` instead for locations in
-British Columbia.
+The two numbers above are the fitting-data averages for black spruce and are
+used here only as reproducible example values. For a real area, replace them
+with long-term climate values for that area. Use one `dd0` and one `map` at
+every age; they describe the location, not a particular year.
 
-```{r climate-climatena, eval = FALSE}
-sites <- data.frame(id = "stand1", lat = stand$lat, long = stand$lon,
-                    elev = stand$elev)
-normals <- run_climatena(sites, period = "Normal_1981_2010.nrm",
-                         base_year = 2000, climatena_dir = "C:/ClimateNA")
-site <- ung_climate_from_climatena(normals, id = "id2")
+`DD5` is degree-days above 5 degrees C, and `DD_0` is degree-days below
+0 degrees C. Neither is the `dd0` input required here. If a location lookup
+is useful, `ung_climate()` can obtain the values, but it needs an internet
+connection and is not run in this vignette.
+
+```{r climate-lookup, eval = FALSE}
+site <- ung_climate(lon = -105.5, lat = 54.1, elev = 500)
+site$dd0
+site$map
 ```
 
-**Option C: your own values.** Use values from another source. They must have
-the definitions given at the top of this document.
+## 2. Make the yield table
 
-This vignette does not run ClimateNA, because ClimateNA must be installed
-separately. The next chunk instead holds the annual values that **ClimateNA
-version 7.60 returned for this point** (1981–2010 normals, longitude −105.5,
-latitude 54.1, elevation 500 m), copied from a real run. The chunk applies the
-conversion of Option B to them. For your own site, replace the table with the
-output of ClimateNA, or use Option A or C.
+`ung_yield_table()` is the main function for a CBM input curve. Nat2 is the
+default because it predicts average volume directly. Ages can include 0, and
+the first row has volume 0.
 
-```{r site}
-climatena_output <- data.frame(id2 = "stand1", MAP = 461,
-                               DD18 = 48, DD_18 = 6467, DD_0 = 2043)
-site <- ung_climate_from_climatena(climatena_output, id = "id2")
-site
-```
-
-The values are inside the range of the data the models were fitted to for
-white spruce (Check 1 in step 6 shows the ranges).
-
-Four points about the climate values:
-
-* **Derived `dd0`.** Neither `climr` nor ClimateNA provides degree-days above
-  0 °C. Both options calculate `dd0` as `(DD18 - DD_18) + 365 × 18 + DD_0`.
-  The result is an approximation, and its error has not been checked against
-  the climate values used to fit the models.
-* **Period.** Request a climate normal (a long-term average, such as
-  1981–2010), not a single year. `ung_climate()` uses the 1981–2010 normals.
-  The functions cannot check which period a ClimateNA table holds.
-* **One value per stand.** Use one `dd0` and one `map` for each stand. Do not
-  change them as the stand ages. The paper used one climate value per plot.
-  The paper does not state the averaging period of those values, so report
-  which period you used.
-* **Same definitions.** Whatever the source, `dd0` must be degree-days above
-  0 °C per year and `map` must be precipitation in mm per year.
-
-## Step 4. Run the prediction
-
-First, predict the volume at the age of the stand.
-
-```{r predict}
-result <- ung_volume(stand$species, age = stand$age,
-                     dd0 = site$dd0, map = site$map)
-result
-```
-
-The columns `H_Nat1` (m), `BA_Nat1` (m²/ha), `V_Nat1` (m³/ha) and `V_Nat2`
-(m³/ha) are the predictions. The columns `species`, `age`, `dd0` and `map`
-repeat the inputs. The species is shown as its code.
-
-A warning appears above the result. It states that a change of 100
-degree-days or 100 mm changes the Nat1 volume by more than 15 %. Step 5
-explains this warning, and Check 2 in step 6 measures the change.
-
-The package also draws a yield curve, which shows volume against age. Give
-`age` a series of values:
-
-```{r curve}
-curve <- ung_volume(stand$species, age = seq(10, 150, by = 10),
-                    dd0 = site$dd0, map = site$map, warn = FALSE)
-plot(curve)
-```
-
-Here `warn = FALSE` hides the warnings, so that the next step can explain them
-for one case. Without it, this call would issue the horizon warning described
-in step 5, because the ages span more than 10 years. The models were designed
-for increment predictions over intervals shorter than 10 years, so read the
-curve with caution (see "Limits of the models"). You can also pass several
-stands at once. Give vectors, or the columns of a data frame, for the inputs.
-The result has one row per stand.
-
-## Step 5. Read the warnings
-
-`ung_volume()` checks each prediction and issues a warning when the result may
-not be reliable. Each warning states how many rows it applies to. The warnings
-have these meanings:
-
-| Warning class | Meaning |
-| --- | --- |
-| `ung2009_warning_age` | The age is below 10 years, or outside the age range of the fitting data for the species. |
-| `ung2009_warning_horizon` | One call predicts the same species and climate over ages that span more than 10 years, for example a yield curve. The models were designed for predictions over intervals shorter than 10 years. |
-| `ung2009_warning_climate` | `dd0` or `map` is outside the range of the fitting data for the species. |
-| `ung2009_warning_sensitivity` | A change of 100 degree-days or 100 mm changes the volume by more than 15 %. |
-| `ung2009_warning_models` | The Nat1 and Nat2 volumes differ by more than 30 %. |
-| `ung2009_warning_output` | The volume or basal area is larger than any value in the fitting data for the species. |
-| `ung2009_warning_na` | An input is missing, so the prediction is `NA`. |
-
-A warning does not mean the calculation failed. It means that you should
-treat the result with more caution.
-
-The following example uses three stands: a stand that is 8 years old, the
-example stand, and the example stand in a very warm climate (`dd0` = 3500).
-Five warnings appear. In the result, the first stand has almost no volume,
-because it is very young. The volume of the third stand is far larger than any
-volume in the fitting data for white spruce, so it is an extrapolation and
-should not be used.
-
-```{r warnings-demo}
-ung_volume("white spruce", age = c(8, 80, 80),
-           dd0 = c(site$dd0, site$dd0, 3500), map = site$map)
-```
-
-You can hide one class of warning and keep the others:
-
-```{r silence, eval = FALSE}
-withCallingHandlers(
-  ung_volume("white spruce", age = 80, dd0 = site$dd0, map = site$map),
-  ung2009_warning_sensitivity = function(w) invokeRestart("muffleWarning")
+```{r yield-long}
+ages <- seq(0, 200, by = 20)
+yield_long <- ung_yield_table(
+  species, age = ages, dd0 = dd0, map = map,
+  format = "long", warn = FALSE
 )
+head(yield_long)
 ```
 
-## Step 6. Test how much the answer depends on the climate values
+The long format has one row per species, climate, and age. Its main columns
+are `species`, `dd0`, `map`, `age`, and `volume`.
 
-The model responds strongly to `dd0` and `map`, and the climate values for a
-location are uncertain. Three checks show how much this matters.
+```{r age-zero}
+yield_long[yield_long$age == 0, c("age", "volume")]
+```
 
-### Check 1. Is the climate inside the range of the fitting data?
+The wide format has one row per curve and one volume column per age. Columns
+are named `vol_0`, `vol_20`, and so on.
 
-The table `ung_envelope` holds the minimum, maximum, mean and standard
-deviation of each variable in the data used to fit the models, for each
-species.
-
-```{r envelope}
-env <- ung_envelope[ung_envelope$species == "PICE.GLA", ]
-data.frame(
-  variable = c("dd0", "map", "age"),
-  site     = c(site$dd0, site$map, stand$age),
-  minimum  = c(env$dd0_min, env$map_min, env$age_min),
-  maximum  = c(env$dd0_max, env$map_max, env$age_max)
+```{r yield-wide}
+yield_wide <- ung_yield_table(
+  species, age = ages, dd0 = dd0, map = map,
+  format = "wide", warn = FALSE
 )
+yield_wide
 ```
 
-A site value outside its minimum and maximum means that the prediction is an
-extrapolation.
+To make several curves, repeat the species and provide one climate pair per
+curve. For example, `rep(species, 2)` can be paired with two `dd0` values and
+two `map` values.
 
-### Check 2. Sensitivity to small changes in climate
+## 3. Quantify uncertainty
 
-`ung_sensitivity()` repeats the prediction with `dd0` and `map` each raised
-and lowered by 100 (degree-days and mm), and reports the largest percentage
-change in volume.
+Uncertainty is a main part of using a volume curve. Ask for an interval while
+making the yield table. The seed makes this simulation reproducible.
 
-```{r sensitivity}
-ung_sensitivity(stand$species, age = stand$age, dd0 = site$dd0, map = site$map)
+```{r yield-uncertainty}
+yield_with_interval <- ung_yield_table(
+  species, age = ages, dd0 = dd0, map = map,
+  model = "Nat2", uncertainty = TRUE, n = 500, seed = 1,
+  format = "long", warn = FALSE
+)
+yield_with_interval[
+  yield_with_interval$age %in% c(0, 80, 200),
+  c("age", "volume", "lower", "upper")
+]
 ```
 
-The columns `dd0_change_pct` and `map_change_pct` give the largest change in
-volume, in percent, for a change of 100 in that variable. The column
-`max_change_pct` is the larger of the two. A value above 15 triggers the
-sensitivity warning. In this example, the Nat1 value is above 15 and the Nat2
-value is below 15. You can change the size of the perturbation with the
-arguments `d_dd0` and `d_map`.
+The `lower` and `upper` columns contain the central 90% interval by default.
+It includes uncertainty in the climate values and uncertainty caused by
+rounding the published parameters. The parameters were published to four
+decimal places, and the unrounded values are not available.
 
-### Check 3. A range of volumes from climate uncertainty
+This interval does **not** include the statistical uncertainty of the fitted
+parameters (standard errors exist for Nat1 only, without the correlations
+needed to combine them) or plot-to-plot variation. The default climate spread
+describes differences among fitting plots. If the uncertainty of your own
+climate source is known, pass it with `sd_dd0` and `sd_map`.
 
-`ung_uncertainty()` draws many (`dd0`, `map`) pairs around your climate
-values, predicts the volume for each pair, and reports a central interval.
-The argument `seed` makes the result repeatable.
+For a curve-shaped uncertainty plot, use `ung_uncertainty()` directly. Its
+shaded band is the interval, and its line is the simulated median.
 
-```{r uncertainty}
-fan <- ung_uncertainty(stand$species, age = seq(20, 150, by = 10),
-                       dd0 = site$dd0, map = site$map,
-                       n = 500, seed = 1, warn = FALSE)
-fan[fan$age %in% c(40, 80, 120), c("age", "model", "volume", "lower", "upper")]
+```{r uncertainty-plot}
+fan <- ung_uncertainty(
+  species, age = ages, dd0 = dd0, map = map,
+  model = "Nat2", n = 500, seed = 1, warn = FALSE
+)
 plot(fan)
 ```
 
-The column `volume` is the prediction at your climate values. The columns
-`lower` and `upper` bound the middle 90 % of the predictions from the drawn
-climate values. In this example the interval is wide, which agrees with the
-sensitivity result in Check 2: small differences in climate change the volume
-by a large amount.
+The `prop_outside` column reports the share of simulated climate values
+outside the fitting-data range. A large share means that much of the interval
+is extrapolation.
 
-Read the result with these points in mind:
+## 4. List all cautions with `ung_check()`
 
-* By default the spread of the climate values is the among-plot standard
-  deviation of the species in the fitting data. It describes how climate
-  differs from one location to another. It does not describe the error of
-  your climate source. If you know that error, give it with `sd_dd0`
-  (degree-days) and `sd_map` (mm).
-* Only the uncertainty in climate is included. The uncertainty in the model
-  parameters and the plot-to-plot variation of the real stands are not
-  included. The interval is therefore **not** a prediction interval for the
-  volume of a real stand.
-* The column `prop_outside` gives the proportion of draws whose climate is
-  outside the range of the fitting data. A large proportion means that much of
-  the interval is extrapolation.
+Run `ung_check()` on the long result. It reports each check, the number of
+affected rows, and a plain-English explanation.
 
-### Optional: a typical stand without site climate
-
-If you omit `dd0` and `map`, the package does not ask for a location. The
-authors fitted the model for each species to measured field plots, and each of
-those plots has a `dd0` and a `map`. For each species, the package uses the
-**average** `dd0` and the **average** `map` of that species' fitting plots. It
-prints a message that says so. The averages are in the table `ung_envelope`
-(columns `dd0_mean` and `map_mean`). They differ between species, so the two
-species below are predicted under two different climates, which the result
-shows in its `dd0` and `map` columns.
-
-```{r defaults}
-typical <- ung_volume(c("white spruce", "black spruce"), age = 80)
-typical[, c("species", "age", "dd0", "map", "V_Nat1", "V_Nat2")]
+```{r checks}
+checks <- ung_check(yield_long)
+checks
 ```
 
-This is useful for comparing species. It is **not** a prediction for a
-particular site, because it uses the average climate where each species was
-measured, not the climate of your stand. The usual warnings still apply, so the
-sensitivity and model-difference warnings can appear here.
+With `warn = TRUE`, `ung_volume()` gives at most one warning per call. That
+warning uses class `ung2009_warning` and is limited to problems the user can
+act on: missing input, an age older than the fitting data, climate outside the
+fitting data, or output beyond the fitting data. It does not issue separate
+warnings for every row or every check.
 
-## Summary of the steps
+The other cautions are still important for a curve. `ung_check()` lists young
+ages, a projection horizon longer than the models' 10-year design horizon,
+sensitivity to climate, and disagreement between Nat1 and Nat2. These checks
+are not warnings from every `ung_volume()` call because they apply to many
+ordinary yield curves.
 
-1. Record the species, the age, and the longitude, latitude and elevation.
-2. Decide whether you need Nat1 (height, basal area and volume), Nat2
-   (volume only), or both.
-3. Obtain `dd0` (degree-days above 0 °C) and `map` (mm) with `ung_climate()`,
-   with `ung_climate_from_climatena()` (local ClimateNA or ClimateBC), or from
-   your own source. Report the source and the period.
-4. Run `ung_volume()`.
-5. Read every warning, and decide whether the result is acceptable.
-6. Compare the climate with `ung_envelope`, run `ung_sensitivity()`, and run
-   `ung_uncertainty()`.
+If the inputs describe a typical stand rather than a particular area, omit
+`dd0` and `map`. The package then uses the fitting-data average for each
+species and reports the substituted values in the result. For CBM work,
+supplying the climate for the area is usually clearer.
+
+## 5. Compare Nat1 and Nat2
+
+Nat2 is recommended when the required output is volume. Nat1 first predicts
+dominant height and basal area `G`, then calculates volume from those
+predictions. Nat2 predicts volume directly.
+
+Use `ung_curve(..., model = "both")` for a short comparison. The default
+Nat1 result is the published, uncorrected Nat1 model.
+
+```{r compare-models}
+comparison <- ung_curve(
+  species, age = ages, dd0 = dd0, map = map,
+  model = "both", warn = FALSE
+)
+comparison[comparison$age == 80, c("age", "V_Nat1", "V_Nat2")]
+plot(comparison)
+```
+
+Uncorrected Nat1 is biased low. At age 80, across species at their average
+climates, its median volume is about 20% below Nat2. This is because predicted
+height and `G` carry more variation into Nat1 than its published volume
+correction accounts for.
+
+The optional `nat1_bias_correction = TRUE` applies a second-order Taylor-series
+correction to Nat1 volume. It closes most of the gap with Nat2; it was added by
+this package and is not part of the published model.
+
+```{r corrected-models}
+comparison_corrected <- ung_curve(
+  species, age = ages, dd0 = dd0, map = map,
+  model = "both", nat1_bias_correction = TRUE, warn = FALSE
+)
+comparison_corrected[
+  comparison_corrected$age == 80,
+  c("age", "V_Nat1", "V_Nat2")
+]
+```
+
+Nat1 also returns `H_Nat1` for dominant height and `G_Nat1` for basal area
+`G`. Plot `G` when that part of the Nat1 system is needed.
+
+```{r basal-area}
+nat1_curve <- ung_curve(
+  species, age = ages, dd0 = dd0, map = map,
+  model = "Nat1", warn = FALSE
+)
+plot(nat1_curve, what = "G")
+```
+
+## 6. Test climate sensitivity
+
+`ung_sensitivity()` changes `dd0` and `map` up and down by 100 and reports the
+largest percentage change in volume. It is a quick way to see whether the
+curve depends strongly on the climate values.
+
+```{r sensitivity}
+sensitivity <- ung_sensitivity(
+  species, age = 80, dd0 = dd0, map = map, model = "both"
+)
+sensitivity[, c("model", "volume", "dd0_change_pct",
+                "map_change_pct", "max_change_pct")]
+```
+
+The `max_change_pct` value is the larger response to the two climate changes.
+`ung_check()` uses 15% as a rule-of-thumb threshold for its climate-sensitivity
+check. The threshold is not a claim from the Ung et al. (2009) paper.
 
 ## Limits of the models
 
-These limits are stated by the authors of the paper.
+The authors designed these models for increment predictions over intervals
+shorter than 10 years. A yield curve over many decades is therefore a longer
+projection than the intended use. Treat it as an illustration of the fitted
+equations, not as a guaranteed forecast for a stand.
 
-* The authors state: "the models developed here were designed for increment
-  predictions over very short (< 10 years) intervals, as requested within the
-  context of the CNFI. The absence of safeguards, such as an empirical
-  adjustment to the number of merchantable stems per hectare, means that the
-  user who may want to use these models for longer-term projections should use
-  caution." (CNFI is the Canadian National Forest Inventory.) A yield curve
-  over many decades is a longer-term projection in this sense. Treat the
-  curve as an illustration of the fitted equations, not as a forecast for a
-  stand.
-* The models were fitted to temporary plots measured once, in stands where one
-  species has at least 75 % of the basal area. For mixed stands, apply the
-  model to each species separately.
-* The climate terms describe the present relationship between climate and
-  volume. Do not enter future climate projections to estimate the effect of
-  climate change.
+The models were fitted to plots measured once, where one species made up at
+least 75% of the basal area. For a mixed stand, apply the model to each
+species separately.
+
+The climate terms describe how volume differs among locations. They do not
+predict the effect of climate change, so do not use future climate projections
+as model inputs.
 
 ## Reference
 

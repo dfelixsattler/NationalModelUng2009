@@ -1,4 +1,4 @@
-"species","n","h_mean","h_sd","h_min","h_max","ba_mean","ba_sd","ba_min","ba_max","v_mean","v_sd","v_min","v_max","age_mean","age_sd","age_min","age_max","dd0_mean","dd0_sd","dd0_min","dd0_max","map_mean","map_sd","map_min","map_max"
+"species","n","h_mean","h_sd","h_min","h_max","g_mean","g_sd","g_min","g_max","v_mean","v_sd","v_min","v_max","age_mean","age_sd","age_min","age_max","dd0_mean","dd0_sd","dd0_min","dd0_max","map_mean","map_sd","map_min","map_max"
 "ABIE.BAL",2270,11.64,3.14,1.6,24.18,20.38,11.91,0.16,81.7,115.78,75.84,0.35,476.49,52.88,29.86,1,223.74,2268,362,1281,3005,1177,191,418,1733
 "ABIE.LAS",50,13.92,3.99,5.7,22.71,22.51,14.23,0.85,66.01,144.26,122.2,2.09,596.26,125.69,56.22,22,277.66,1594,180,1186,1941,861,216,302,1393
 "ACER.RUB",919,13.66,2.7,4.33,22.35,21.23,9.75,0.22,50.11,129.15,68.07,0.81,435.69,52.75,21.66,2,199.74,2622,165,2068,3171,1197,140,928,1692

@@ -2,7 +2,7 @@
 % Please edit documentation in R/ung_uncertainty.R
 \name{ung_uncertainty}
 \alias{ung_uncertainty}
-\title{Climate-uncertainty fan for predicted volume}
+\title{Uncertainty interval for predicted volume}
 \usage{
 ung_uncertainty(
   species,
@@ -15,20 +15,22 @@ ung_uncertainty(
   sd_map = NULL,
   cor = 0,
   interval = 0.9,
+  rounding = TRUE,
+  nat1_bias_correction = FALSE,
   seed = NULL,
   warn = TRUE
 )
 }
 \arguments{
 \item{species}{Character vector. Species code, scientific name or common name
-(case-insensitive); see \code{\link[=ung_species]{ung_species()}}.}
+(any capitalisation); see \code{\link[=ung_species]{ung_species()}}.}
 
-\item{age}{Numeric vector. Stand age in years (> 0).}
+\item{age}{Numeric vector. Stand age in years (0 or more).}
 
-\item{dd0}{Numeric vector. Annual degree-days above 0 degrees C (not DD5).
-If \code{NULL} (default), the average \code{dd0} of the plots used to fit that
-species' model is used (column \code{dd0_mean} of \link{ung_envelope}); see
-\emph{Climate used when \code{dd0} and \code{map} are omitted}.}
+\item{dd0}{Numeric vector. Degree-days above 0 degrees C in a year (see
+\emph{Climate inputs}). If \code{NULL} (default), the average \code{dd0} of the plots used
+to fit that species' model is used (column \code{dd0_mean} of \link{ung_envelope});
+see \emph{Climate used when \code{dd0} and \code{map} are omitted}.}
 
 \item{map}{Numeric vector. Mean annual precipitation in mm. If \code{NULL}
 (default), the average \code{map} of the plots used to fit that species' model
@@ -48,10 +50,17 @@ Default 0.}
 \item{interval}{Central probability of the interval, in (0, 1). Default 0.9
 (5th to 95th percentile).}
 
+\item{rounding}{Logical. \code{TRUE} (default) also varies the parameters within
+their rounding error (see \emph{Rounding of the parameters}).}
+
+\item{nat1_bias_correction}{Logical. \code{TRUE} multiplies Nat1 volume by the
+approximate correction described in \emph{Nat1 volume is biased low}. Default
+\code{FALSE} (the published model).}
+
 \item{seed}{Optional integer for reproducible draws. The global random
 number state is restored afterwards.}
 
-\item{warn}{Logical. \code{FALSE} skips the diagnostic warnings and messages of
+\item{warn}{Logical. \code{FALSE} skips the warning and messages of
 \code{\link[=ung_volume]{ung_volume()}} for the central prediction.}
 }
 \value{
@@ -61,13 +70,30 @@ and model: \code{row}, \code{species}, \code{age}, \code{dd0}, \code{map}, \code
 \code{upper} (m3/ha), and \code{prop_outside}.
 }
 \description{
-Propagates uncertainty in the climate inputs through the models by Monte
-Carlo sampling. For each stand, \code{n} pairs of (\code{dd0}, \code{map}) are drawn from a
-bivariate normal distribution centred on the supplied climate (or, if \code{dd0}
-or \code{map} is omitted, on the average of the plots used to fit that species'
-model; see \code{\link[=ung_volume]{ung_volume()}}). Volume is predicted for every draw, and the
-median and a central interval of the predictions are returned.
+Shows how much predicted volume could change because of two sources of
+uncertainty: the climate inputs, and the rounding of the published model
+parameters. It works by simulation (Monte Carlo). For each stand, \code{n} pairs
+of (\code{dd0}, \code{map}) are drawn from a normal distribution centred on the
+supplied climate (or, if \code{dd0} or \code{map} is omitted, on the average of the
+plots used to fit that species' model; see \code{\link[=ung_volume]{ung_volume()}}). With
+\code{rounding = TRUE}, each draw also uses slightly different parameters (see
+below). Volume is predicted for every draw, and the median and a central
+interval of the predictions are returned.
 }
+\section{Rounding of the parameters}{
+
+The authors published every parameter with only 4 decimal places, and the
+unrounded values are not available. Volume is the exponential of a sum of
+many terms, some of them multiplied by large climate values, so these small
+rounding errors add up. With \code{rounding = TRUE} (the default), each draw
+picks every parameter at random within half a unit of its last printed digit
+(for example, 0.1234 becomes a value between 0.12335 and 0.12345). The
+resulting spread is the volume uncertainty caused by rounding alone. It is
+typically a few percent for Nat2 and larger for Nat1 (see \emph{Parameters are
+rounded} in \code{\link[=ung_volume]{ung_volume()}}). Set \code{rounding = FALSE} to see climate
+uncertainty alone.
+}
+
 \section{What the spread means}{
 
 \itemize{
@@ -79,9 +105,12 @@ prediction move for a location that differs from this one by a typical
 among-plot climate difference?". If you know the uncertainty of your own
 climate values (for example from a climate-product comparison), pass it as
 \code{sd_dd0} and \code{sd_map}.
-\item Only \strong{climate uncertainty} is propagated. Parameter uncertainty and
-residual (plot-to-plot) variation of the models are not included, so the
-interval is not a prediction interval for a stand's volume.
+\item Only \strong{climate uncertainty} and \strong{parameter rounding} are included. The
+statistical uncertainty of the fitted parameters is not: standard errors
+exist for Nat1 only, and without the correlations between parameters they
+cannot be combined correctly. Plot-to-plot variation around the models is
+not included either, so the interval is narrower than the range of volumes
+you would see in real stands of that age and climate.
 \item Draws are \strong{untruncated} normal values, bounded below at 0 because
 degree-days and precipitation cannot be negative. \code{dd0} and \code{map} are
 independent unless you set \code{cor}; their correlation in the fitting data is

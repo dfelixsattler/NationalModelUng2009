@@ -1,20 +1,25 @@
 # Project status: NationalModelUng2009
 
-Status date: 2026-10-22. Package version: 0.1.0. Latest commit: `a7f6ea1`.
-Quality gates at this date: `devtools::test()` gives 91 passing tests, 0 failures
+Status date: 2026-10-22. Package version: 0.1.0. Previous commit: `5fd867d`
+(this status describes the commit that follows it).
+Quality gates at this date: `devtools::test()` gives 119 passing tests, 0 failures
 and 1 skipped (an opt-in test that needs `climr`). `R CMD check` with vignettes
-gives 0 errors, 0 warnings and 0 notes. Use R 4.5.3; R 4.6.0 was broken on the
-development machine.
+gives 0 errors, 0 warnings and 0 notes.
+Use R 4.5.3; R 4.6.0 was broken on the development machine.
 
 ## 1. Purpose
 
 An R package that implements the Nat1 and Nat2 national stand-volume models of
 Ung, Bernier, Guo and Lambert (2009), *The Forestry Chronicle* 85(1): 57-64,
-for 25 Canadian tree species.
+for 25 Canadian tree species. The main users are people who need a
+volume-by-age curve, for example for the Carbon Budget Model (CBM), and
+researchers who need a volume curve for an area of Canada. The package should
+stay simple and use explicit, plain-English wording.
 
-* **Nat1** predicts dominant height (H), basal area (BA) and gross merchantable
-  volume (V) in sequence. H and BA are functions of age, `dd0` and `map`.
-  V is a function of ln(H) and ln(BA).
+* **Nat1** predicts dominant height (H), basal area (G) and gross merchantable
+  volume (V) in sequence. H and G are functions of age, `dd0` and `map`.
+  V is a function of ln(H) and ln(G). The names H, G and V follow the paper and
+  are used everywhere in the package (columns `H_Nat1`, `G_Nat1`, `V_Nat1`).
 * **Nat2** predicts V directly from age, `dd0` and `map`.
 * `dd0` is annual degree-days above 0 °C (the paper's `D0`). `map` is mean annual
   precipitation in mm.
@@ -22,9 +27,40 @@ for 25 Canadian tree species.
   `Y = exp(ln Y) * C_D`.
 
 The package source of the model equations and parameters is the authors' own
-spreadsheets and CSV files (kept in `myfiles/`; see section 5, item 1).
+spreadsheets and CSV files (kept in the untracked `myfiles/` folder).
 
 ## 2. Major work completed
+
+### Decisions made in the review of 2026-10-22
+
+* **Nat2 is the recommended model** and the default of `ung_yield_table()`.
+* **Nat1 as published is biased low.** Its volume equation was fitted with
+  measured H and G; in Nat1 they are predicted, and their error is not carried
+  into the volume correction factor. At age 80 and species-mean climate, Nat2 is
+  a median of about 20 % above Nat1 (higher for all 25 species). Nat1 stays
+  available unchanged, with an opt-in second-order Taylor correction
+  (`nat1_bias_correction = TRUE`, factor `1 + s2/2`,
+  `s2 = v31^2 * 2 ln(CDh) + v32^2 * 2 ln(CDg)`, H and G errors assumed
+  uncorrelated). The factor is 1.05 to 1.46 (median 1.20) and reduces the
+  median Nat2/Nat1 gap to under 1 %.
+* **Parameters are rounded to 4 decimal places in every source** (a few large
+  values to 4 significant digits), and the unrounded estimates will not become
+  available. The effect is documented prominently (README, `?ung_volume`,
+  `?ung_parameters`) and is included by default in `ung_uncertainty()`
+  (`rounding = TRUE`). At age 80 and species-mean climate it is about 9 %
+  (3 % to 16 %) for Nat1 and about 4 % (up to 9 %) for Nat2, as an SD.
+* **Uncertainty is part of the main workflow** (`ung_yield_table(uncertainty =
+  TRUE)`), not an add-on.
+* **One warning per call, plus `ung_check()`.** Warnings that fire on almost
+  every yield curve teach users to ignore warnings. `ung_volume()` now gives at
+  most one plain-English warning (class `ung2009_warning`), only for problems
+  the user can act on: missing input, age above the fitting data, climate
+  outside the fitting data, output larger than any fitting plot. The other
+  cautions (young age, long horizon, sensitivity to climate, Nat1/Nat2
+  disagreement) are listed on request by `ung_check()`.
+* **Age 0 is allowed** and gives 0 for H, G and V, as CBM yield tables expect.
+* Not to be done: contacting the authors (for unrounded parameters or for the
+  H/G parameter version).
 
 ### Models and data
 
@@ -41,7 +77,7 @@ spreadsheets and CSV files (kept in `myfiles/`; see section 5, item 1).
   the Duan factor is applied to each output only. This is what the code does.
   (The sheet has two typos: `v22` for `v32`, and `ln(H)*Cd` for `exp(ln H)*Cd`.)
 * **Per-species fitting-data envelope.** The dataset `ung_envelope` (25 species)
-  holds the min, max, mean and SD of age, `dd0`, `map`, H, BA and V in the
+  holds the min, max, mean and SD of age, `dd0`, `map`, H, G and V in the
   fitting data, taken from the `DATASUMMARY` sheet. It replaced an earlier pooled
   three-species range, which was wrong for most species. It is built by
   `data-raw/build_envelope.R`.
@@ -69,23 +105,29 @@ spreadsheets and CSV files (kept in `myfiles/`; see section 5, item 1).
 
 ### Diagnostics and features
 
-* Warnings, each with its own class (all inherit from `ung2009_warning`):
-  `_age`, `_horizon`, `_climate`, `_sensitivity`, `_models`, `_output`, `_na`.
-  Each can be silenced separately or with `warn = FALSE`.
+* `ung_yield_table()`: the main output for CBM users. Volume by age for one
+  model (Nat2 by default), ages 0 to 250 by default, in a long layout (one row
+  per age) or a wide layout (one row per curve, columns `vol_0`, `vol_10`, ...),
+  with an optional uncertainty interval.
+* `ung_check()`: a table of every caution, with the number of rows affected, or
+  one TRUE/FALSE column per caution with `rows = TRUE`.
+* At most one warning per call (see the decisions above). All warnings have the
+  single class `ung2009_warning`; `warn = FALSE` turns them off.
 * **Time-horizon caution.** The authors' limitation statement (designed for
   increments over very short, < 10 year intervals, with no safeguard such as an
   adjustment to merchantable stems per hectare) is quoted in the `ung_volume()`
-  help page, the README and the vignette. The `ung2009_warning_horizon` warning
-  fires when one call predicts the same species and climate over ages that span
-  more than 10 years.
+  help page, the README and the vignette. `ung_check()` flags it (`long_horizon`)
+  when one species and climate are predicted over ages that span more than 10
+  years.
 * `ung_sensitivity()`: percent change in volume for +/- 100 degree-days or
   +/- 100 mm.
 * **Defaults for omitted climate:** if `dd0` or `map` is omitted, the package uses,
   for each species, the average `dd0` and average `map` of the plots the authors
   used to fit that species' model (`ung_envelope$dd0_mean`, `$map_mean`), with a
   message. The result is a typical stand of the species, not a site prediction.
-* `ung_uncertainty()`: Monte Carlo climate-uncertainty fan (median and central
-  interval) and its `plot()` method.
+* `ung_uncertainty()`: Monte Carlo uncertainty interval (median and central
+  interval) from climate uncertainty and parameter rounding, with options
+  `rounding` and `nat1_bias_correction`, and a `plot()` method.
 * `ung_curve()`: yield curves for several species (every species at every age).
   `ung_volume()` matches arguments row by row, so this is a separate function.
 * `plot()` methods for `ung_volume` and `ung_uncertainty` results, with legends
@@ -93,12 +135,17 @@ spreadsheets and CSV files (kept in `myfiles/`; see section 5, item 1).
 
 ### Documentation and tests
 
-* Vignette `vignettes/ung-workflow.Rmd`: a six-step end-to-end example (location,
-  model choice, climate values with three options, prediction, warnings, three
-  checks). It uses the real ClimateNA values above.
-* README, roxygen help pages and `ung_envelope` / `ung_parameters` provenance notes.
-* Tests in `tests/testthat/` (volume, warnings, curves, uncertainty, ClimateNA
-  conversion).
+* Vignette `vignettes/ung-workflow.Rmd`: an end-to-end example built around
+  `ung_yield_table()`, uncertainty, `ung_check()` and the choice between Nat1
+  and Nat2. Its text no longer depends on exact counts of warnings.
+* README (plain-English sections on the model choice, rounding, uncertainty,
+  climate names, the Duan factor, warnings and age 0), roxygen help pages and
+  `ung_envelope` / `ung_parameters` provenance notes.
+* Tests in `tests/testthat/` (volume, age 0, bias correction, warning and
+  checks, yield table, curves, uncertainty with rounding, ClimateNA conversion).
+* `data-raw/build_parameters.R` now reads `myfiles/Ung_stand_volume_function.R`
+  (repo-relative) instead of a personal OneDrive path. Rebuilding gives an
+  identical `ung_parameters`.
 
 ## 3. How the package improves on the earlier scripts
 
@@ -128,12 +175,12 @@ how the models are used, not what they compute.
 | --- | --- |
 | Arguments named `GDD` and `PREC`. `GDD` suggests growing degree-days above 5 °C, but the models need degree-days above 0 °C. | The argument is `dd0`. The help pages, README and vignette state that it is not `DD5` and not ClimateNA `DD_0`. |
 | One species per call. With a vector of species it does not stop. It gives a warning and silently returns a **single row** (tested: two species gave one row). | Species are vectorised and matched row by row to age, `dd0` and `map`. `ung_curve()` combines species with ages. Mismatched lengths give an error that names the arguments. |
-| An `NA` age stops with an unhelpful message ("missing value where TRUE/FALSE needed"). | `NA` inputs give `NA` predictions and an `ung2009_warning_na` warning. |
-| Climate is not checked. A negative `GDD` is accepted (tested) and returns a number. | Negative or infinite `dd0`, `map` and non-positive ages stop with a clear message. |
-| No check of the fitting range. The example in its comments predicts ages 1 to 300 at a climate far outside the fitting data for the species. | Per-species fitting envelope (`ung_envelope`) and warnings for age, climate, output size, high sensitivity to climate, Nat1 versus Nat2 disagreement and long age spans. |
-| The result holds only `age`, `H`, `BA`, `V` and `V2`. It omits the species and the climate used, and the names are inconsistent (`V`, `V2`). | The result repeats `species`, `age`, `dd0` and `map`, and names columns by model (`V_Nat1`, `V_Nat2`, `H_Nat1`, `BA_Nat1`). It has a `plot()` method. |
+| An `NA` age stops with an unhelpful message ("missing value where TRUE/FALSE needed"). | `NA` inputs give `NA` predictions and a plain-English warning. |
+| Climate is not checked. A negative `GDD` is accepted (tested) and returns a number. | Negative or infinite `dd0`, `map` and negative ages stop with a clear message. Age 0 gives volume 0. |
+| No check of the fitting range. The example in its comments predicts ages 1 to 300 at a climate far outside the fitting data for the species. | Per-species fitting envelope (`ung_envelope`). One warning for age, climate or output outside the fitting data; `ung_check()` also flags high sensitivity to climate, Nat1 versus Nat2 disagreement, young ages and long age spans. |
+| The result holds only `age`, `H`, `BA`, `V` and `V2`. It omits the species and the climate used, and the names are inconsistent (`V`, `V2`). | The result repeats `species`, `age`, `dd0` and `map`, and names columns by model (`V_Nat1`, `V_Nat2`, `H_Nat1`, `G_Nat1`). It has a `plot()` method. |
 | Species by code only. Parameters are typed into the function body. | Species by common name, scientific name or code (`ung_species()`). Parameters are a documented dataset with their source and verification (`ung_parameters`). |
-| No documentation, tests or statement of the authors' limitations. | Help pages, a worked vignette and 91 tests. The authors' limitation statement (very short intervals, no safeguard on merchantable stems per hectare) is quoted, and it triggers a warning for long age spans. |
+| No documentation, tests or statement of the authors' limitations. | Help pages, a worked vignette and 119 tests. The authors' limitation statement (very short intervals, no safeguard on merchantable stems per hectare) is quoted, and `ung_check()` flags long age spans. |
 | No way to get climate. | `ung_climate()` (climr) and `ung_climate_from_climatena()` (local ClimateNA or ClimateBC), with the derivation of `dd0` and a documented warning that it is an approximation. |
 | It needs the user to know which climate period to use. | The docs state one value per stand, constant with age, from a long-term normal, and that the paper does not give the period. |
 
@@ -143,17 +190,19 @@ how the models are used, not what they compute.
 | --- | --- |
 | **The Monte Carlo draws are truncated at plus or minus 1 SD** (by rejection sampling). A normal variable truncated this way has a standard deviation of only about 0.54 of the stated SD, so the spread of the curves is understated by almost half. | `ung_uncertainty()` draws untruncated normal values (bounded at 0), so the spread matches the stated SD. The SD can be set (`sd_dd0`, `sd_map`), and the share of draws outside the fitting range is reported (`prop_outside`). |
 | Degree-days and precipitation are drawn independently. | A correlation can be set (`cor`). The default is 0, which is stated. |
-| The default SD is the among-plot spread (spatial variation). The script does not say that this is not the uncertainty of a site's climate. | The docs say that the default is spatial, not inter-annual and not product error, and that the interval is a climate-only interval, not a prediction interval. |
+| The default SD is the among-plot spread (spatial variation). The script does not say that this is not the uncertainty of a site's climate. | The docs say that the default is spatial, not inter-annual and not product error, and that the interval covers climate and parameter rounding only, not the full range of real stands. |
 | The draw loops append values one at a time (`repeat`, `append`). They never end if an SD is missing (`NA`). | Draws are vectorised. `seed` makes them repeatable, and the user's random-number state is restored. |
 | The result is raw curves. There is no interval (median, bounds) and no plot method. | The result has the median and a central interval (`interval`, default 90 %), and a `plot()` method. |
-| Nat1 only. No Nat2, so there is no second model to compare. | Both models, and a warning when they disagree by more than 30 %. |
-| Ages 1 to 100 by default, which includes ages under 10 where predictions are near zero and unreliable. | Warning for age under 10 and for ages outside the species' fitting range. |
+| Nat1 only. No Nat2, so there is no second model to compare. | Both models; `ung_check()` flags disagreement of more than 30 %. Nat2 is recommended, and Nat1 has an optional bias correction. |
+| Ages 1 to 100 by default, which includes ages under 10 where predictions are near zero and unreliable. | `ung_check()` flags ages under 10 or below the species' youngest fitted stand; ages above the oldest give a warning. |
 | Hard-coded file paths (`C:/Juha/...`), `library(ggplot2)` at the top of the script, and parameters read from CSV files outside the repository. | An installable package with the parameters inside it, and no dependencies beyond base R (`climr` is optional). |
 | A species missing from the climate file silently gives an empty result. | Species are validated against the 25 supported species. |
 
 ### Things the package adds that neither script has
 
-* The per-species fitting envelope and the diagnostic warnings.
+* The per-species fitting envelope, the single warning and `ung_check()`.
+* `ung_yield_table()` for CBM-style tables starting at age 0.
+* The parameter-rounding uncertainty and the optional Nat1 bias correction.
 * `ung_sensitivity()`, which shows how much the volume changes for a 100
   degree-day or 100 mm error in the climate values.
 * Defaults for omitted climate (the average `dd0` and `map` of each species' fitting
@@ -170,8 +219,8 @@ how the models are used, not what they compute.
 ## 4. Known limitations (by design or inherited from the paper)
 
 * The models were built for increments over intervals shorter than 10 years.
-  Long-term yield curves are extrapolations. The model has no time-step argument,
-  so the horizon warning can only detect age spans within a single call.
+  Long-term yield curves are extrapolations. `ung_check()` can only detect age
+  spans within the data it is given.
 * Fitted to single-measurement temporary plots with a species making up at least
   75 % of basal area. For mixed stands, apply the model per species.
 * The climate terms are descriptive. They must not be used with future climate
@@ -179,88 +228,64 @@ how the models are used, not what they compute.
 * Predictive ability for increments is moderate to poor, according to the paper.
 * Volume is very sensitive to climate. For jack pine at age 80 (`dd0` 2200,
   `map` 800), a 100 degree-day error changes Nat1 volume by about 26 %.
-* The uncertainty fan includes climate uncertainty only. It is not a prediction
-  interval.
+* The parameters are rounded (section 2). This cannot be fixed.
+* The uncertainty interval covers climate and parameter rounding only. Nat1
+  standard errors exist in `Parms.csv`, but there are none for Nat2 and no
+  parameter correlations, so parameter estimation error is not included.
+* The Nat1 bias correction assumes uncorrelated H and G errors and roughly
+  normal log-scale errors. It is the package's addition, not the authors'.
 
 ## 5. Outstanding issues
 
 Ordered by priority.
 
-1. **`myfiles/` and `Rplots.pdf` were tracked: now untracked (pending commit).**
-   The folder (an email message, the authors' spreadsheets, `NATGY.r`, third-party
-   CSV files) was committed by mistake. It has been removed from git tracking with
-   `git rm -r --cached` and added to `.gitignore`, together with
-   `tests/testthat/Rplots.pdf`. The files remain on disk, because
-   `data-raw/build_envelope.R` and `build_parameters.R` read from `myfiles/`.
-   The removal must still be committed. The earlier commits still contain the
-   files in the history. Removing them from the history was judged not necessary.
-   Decide whether the authors' files may be redistributed at all (see item 10).
-2. **Resolved:** the stray `Rplots.pdf` (see item 1).
-3. **The derived `dd0` has not been validated.** It is an approximation built from
-   regression-based degree-day variables. It has not been compared with the climate
-   values used to fit the models. The `ClimateMeanSD.csv` species means give a
-   possible, indirect check.
-4. **`ung_climate()` (climr) has not been compared with ClimateNA** for the same
-   point. The user deferred this ("do not retry the climr validation"). Until it
-   is done, the climr path is untested against a known result, and the opt-in test
-   is skipped by default.
-5. **Provenance of the Nat1 H and BA parameters.** The author's email says the H
-   and G parameters in the later spreadsheet were re-estimated and differ slightly
-   from those in the 2009 paper; only the volume model was published. The
-   package's Nat1 values match four CSV files, and Nat2 matches the published
-   volume sheet. Confirm with the authors which version of the H and BA
-   parameters is intended. The `Parms` sheet of `system equations.xls` was not
-   compared cell by cell with the package parameters.
-6. **Warning thresholds are heuristics, not from the paper:** 15 % for
-   sensitivity, 30 % for Nat1 versus Nat2 disagreement, and 10 years for age and
-   horizon. They are set in `R/checks.R`. At species-mean climate and age 80, the
-   sensitivity and model-disagreement warnings can legitimately fire, so users may
-   see many warnings.
-7. **No independent validation.** The package reproduces the published equations.
-   There is no comparison with observed stand data. The only internal consistency
-   check is Nat1 versus Nat2.
-8. **Vignette not updated for the latest changes.** It does not mention
-   `ung_curve()` or the wording of the typical-stand message. Its prose in
-   steps 4 to 6 depends on exact numeric output (for example, "five warnings"
-   in step 5, and Nat1 sensitivity above 15 and Nat2 below). Re-read it after any
-   numeric change. The user planned to run it in RStudio.
-9. **`ung_uncertainty()` pairs arguments row by row** (it has no equivalent of
-   `ung_curve()`), so several species over a range of ages needs a loop or
-   `expand.grid()`.
-10. **Licence and attribution.** The package is MIT with a Crown copyright holder.
-    Confirm that redistributing the authors' parameters is allowed and that the
-    attribution in `DESCRIPTION` and the README is what the authors expect.
-11. **Not set up:** continuous integration, a pkgdown site, and a release or CRAN
-    submission. The version is 0.1.0. `climr` is in Suggests (it is slow to
-    download).
+1. **Remove `myfiles/` and `Rplots.pdf` from the git history.** They are
+   untracked since `5fd867d` but remain in earlier commits (and in old
+   `refs/agents/*` checkpoint refs). The user asked for them to be removed from
+   the history if possible. This needs a history rewrite and a force push.
+2. **The derived `dd0` has not been validated** (on hold by decision). It is an
+   approximation built from regression-based degree-day variables and has not
+   been compared with the climate values used to fit the models.
+3. **`ung_climate()` (climr) has not been compared with ClimateNA** for the same
+   point (on hold by decision). The opt-in test is skipped by default.
+4. **Thresholds are rules of thumb, not from the paper** (on hold by decision):
+   15 % for sensitivity, 30 % for Nat1 versus Nat2, 10 years for young ages and
+   for the horizon. They are set in `R/checks.R` and now affect only
+   `ung_check()`, not warnings.
+5. **Provenance of the Nat1 H and G parameters.** The authors' email says the H
+   and G parameters in the later spreadsheet were re-estimated; only the volume
+   model was published. The package's Nat1 values match four CSV files and
+   Tables 4 and 5 of the paper for three species. The authors will not be
+   contacted, so this stays as is.
+6. **No independent validation** against observed stand data.
+7. **Licence and attribution.** Confirm that redistributing the authors'
+   parameters is allowed and that the attribution is what the authors expect.
+8. **Not set up:** continuous integration, a pkgdown site, and a release. The
+   version is 0.1.0. `climr` is in Suggests.
 
 ## 6. Suggested next steps
 
-1. Commit the removal of `myfiles/` and `Rplots.pdf` from tracking (outstanding item 1).
-2. Run the vignette in RStudio and confirm its text matches its output.
-3. Do the climr versus ClimateNA comparison at the example point, then update
-   `ung_climate()` documentation with the result.
-4. Ask the authors about items 3 and 5. Record their answers in `R/data.R`
-   (provenance).
-5. Optionally rename `GDD` to `dd0` in the user's external scripts
-   (`Ung_stand_volume_function.R` and `NATGY.r`), to remove the naming confusion
-   there. The comparison with the package is in section 3.
-6. Decide whether to calibrate or justify the warning thresholds (item 6).
-7. Consider an independent check against observed plot data, even a small one.
+1. Purge `myfiles/` from the git history (item 1).
+2. Run the vignette in RStudio and confirm its text reads well with its output.
+3. When time allows, the items on hold: `dd0` and climr validation, and the
+   thresholds.
+4. Consider an independent check against observed plot data, even a small one.
 
 ## 7. Where things are
 
 | Path | Contents |
 | --- | --- |
-| `R/ung_volume.R` | `ung_volume()`, input checks, the equations (`.predict`) |
+| `R/ung_volume.R` | `ung_volume()`, input checks, the equations (`.predict`), the main documentation of model choice, rounding, Duan factor, climate names |
+| `R/ung_yield_table.R` | `ung_yield_table()` (long and wide CBM-style tables) |
 | `R/ung_curve.R` | `ung_curve()` |
+| `R/checks.R` | `ung_check()`, the single warning, thresholds |
+| `R/calibration.R` | Envelope lookup and the warning helper |
 | `R/ung_sensitivity.R` | `ung_sensitivity()` |
-| `R/ung_uncertainty.R` | `ung_uncertainty()` and its plot method |
+| `R/ung_uncertainty.R` | `ung_uncertainty()`, the rounding draws, and its plot method |
 | `R/ung_climate.R` | `ung_climate()` (climr), `ung_climate_from_climatena()`, the `dd0` derivation |
-| `R/checks.R`, `R/calibration.R` | Warning logic, thresholds, envelope lookup |
 | `R/plot.R` | `plot.ung_volume()` |
 | `R/data.R` | Documentation and provenance of `ung_parameters` and `ung_envelope` |
-| `data/`, `data-raw/` | Datasets and the scripts that build them |
+| `data/`, `data-raw/` | Datasets and the scripts that build them (they read the untracked `myfiles/`) |
 | `vignettes/ung-workflow.Rmd` | Worked example |
 | `tests/testthat/` | Tests |
-| `myfiles/` | Source spreadsheets, CSVs and scripts from the authors (see item 1) |
+| `myfiles/` | Source spreadsheets, CSVs and scripts from the authors (untracked) |

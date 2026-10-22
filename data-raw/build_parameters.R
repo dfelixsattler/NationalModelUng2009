@@ -1,8 +1,20 @@
-# One-off script: extracts the Ung et al. (2009) parameter tables from the original
-# CTAE-derived script and writes data/ung_parameters.rda plus a CSV for review.
+# One-off script: extracts the Ung et al. (2009) parameter tables from the R
+# implementation supplied with the developers' files and writes
+# data/ung_parameters.rda plus a CSV for review.
 # Run from the package root: source("data-raw/build_parameters.R")
+#
+# Notes on the source values:
+# * Every parameter was published with 4 decimal places (a few large rate terms,
+#   e.g. 182, -757, -159.3, with 4 significant digits). The unrounded estimates
+#   are not available; ung_uncertainty() propagates the rounding error.
+# * Trembling aspen (POPU.TRE) v31 is 0.9262 in every developer file but 0.9263
+#   in Table 4 of the paper. The file value is kept; the difference changes
+#   volume by about 0.01 %.
+# * myfiles/ is not tracked in git (it holds the developers' files), so this
+#   script can only be rerun on a machine that has a copy.
 
-src <- "C:/Users/dsattler/OneDrive - NRCan RNCan/Documents/Research/Magplot/R/Ung_stand_volume_function.R"
+src <- "myfiles/Ung_stand_volume_function.R"
+if (!file.exists(src)) stop("Source file not found: ", src)
 txt <- readLines(src, warn = FALSE)
 
 # Pull the rows of a tibble::tribble() block that starts at the line matching `start`

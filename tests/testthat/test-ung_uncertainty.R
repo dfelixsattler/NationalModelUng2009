@@ -12,18 +12,8 @@ test_that("species-mean climate is used when dd0 and map are omitted", {
   # explicit climate gives no message, and warn = FALSE silences it
   expect_no_message(ung_volume("PICE.MAR", 80, 2000, 900))
   expect_no_message(ung_volume("PICE.MAR", 80, warn = FALSE))
-  # defaults lie inside each species' own fitting range (no age/climate/output
-  # warnings; sensitivity and model-gap diagnostics can legitimately fire)
-  classes <- character()
-  withCallingHandlers(
-    suppressMessages(ung_volume(ung_species()$code, 80)),
-    ung2009_warning = function(w) {
-      classes <<- c(classes, class(w)[1])
-      invokeRestart("muffleWarning")
-    }
-  )
-  expect_false(any(c("ung2009_warning_age", "ung2009_warning_climate",
-                     "ung2009_warning_output", "ung2009_warning_na") %in% classes))
+  # defaults lie inside each species' own fitting range, so no warning at all
+  expect_no_warning(suppressMessages(ung_volume(ung_species()$code, 80)))
 })
 
 test_that("ung_uncertainty returns a reproducible, ordered fan", {
@@ -41,9 +31,15 @@ test_that("ung_uncertainty returns a reproducible, ordered fan", {
 
 test_that("zero SD collapses the fan; larger SD widens it; seed is restored", {
   z <- ung_uncertainty("PINU.BAN", 80, 2200, 800, n = 50, sd_dd0 = 0, sd_map = 0,
-                       seed = 2, warn = FALSE)
+                       rounding = FALSE, seed = 2, warn = FALSE)
   expect_equal(z$lower, z$volume)
   expect_equal(z$upper, z$volume)
+  # Rounding alone gives a small but non-zero spread around the central value
+  r <- ung_uncertainty("PINU.BAN", 80, 2200, 800, n = 500, sd_dd0 = 0, sd_map = 0,
+                       seed = 2, warn = FALSE)
+  expect_true(all(r$upper > r$lower))
+  expect_true(all(r$lower < r$volume & r$volume < r$upper))
+  expect_true(all((r$upper - r$lower) / r$volume < 0.5))
   narrow <- ung_uncertainty("PINU.BAN", 80, 2200, 800, n = 500, sd_dd0 = 20, sd_map = 20,
                             seed = 2, warn = FALSE)
   wide <- ung_uncertainty("PINU.BAN", 80, 2200, 800, n = 500, sd_dd0 = 200, sd_map = 200,

@@ -10,6 +10,7 @@ ung_curve(
   dd0 = NULL,
   map = NULL,
   model = c("both", "Nat1", "Nat2"),
+  nat1_bias_correction = FALSE,
   warn = TRUE
 )
 }
@@ -26,8 +27,12 @@ per species.}
 
 \item{model}{One of \code{"both"} (default), \code{"Nat1"} or \code{"Nat2"}.}
 
-\item{warn}{Logical. Set to \code{FALSE} to skip all diagnostic warnings and the
-message about default climate.}
+\item{nat1_bias_correction}{Logical. \code{TRUE} multiplies Nat1 volume by the
+approximate correction described in \emph{Nat1 volume is biased low}. Default
+\code{FALSE} (the published model).}
+
+\item{warn}{Logical. Set to \code{FALSE} to skip the warning and the message about
+default climate.}
 }
 \value{
 A data.frame of class \code{ung_volume} (see \code{\link[=ung_volume]{ung_volume()}}) with one row
@@ -41,20 +46,19 @@ error (two species, 71 ages), whereas \code{ung_curve()} returns 71 ages for eac
 species.
 }
 \details{
-A curve covers more than 10 years of age, so by default
-\code{\link[=ung_volume]{ung_volume()}} issues the \code{ung2009_warning_horizon} warning. See the
-section \emph{Intended use and time horizon} in \code{\link[=ung_volume]{ung_volume()}}. Set
-\code{warn = FALSE} to hide it.
+A yield curve covers more than 10 years of age, which is longer than
+the authors designed the models for (see \emph{Intended use and time horizon}
+in \code{\link[=ung_volume]{ung_volume()}}). This and the other cautions can be listed with
+\code{\link[=ung_check]{ung_check()}}. For a simple table of age and volume, for example for the
+Carbon Budget Model, use \code{\link[=ung_yield_table]{ung_yield_table()}}.
 }
 \examples{
-curves <- ung_curve(c("black spruce", "Douglas-fir"), age = 10:150,
-                    warn = FALSE)
+curves <- ung_curve(c("black spruce", "Douglas-fir"), age = 10:150)
 plot(curves)
 
 # One climate for every species
-plot(ung_curve(c("white spruce", "jack pine"), dd0 = 2200, map = 600,
-               warn = FALSE))
+plot(ung_curve(c("white spruce", "jack pine"), dd0 = 2200, map = 600))
 }
 \seealso{
-\code{\link[=ung_volume]{ung_volume()}}, \code{\link[=ung_uncertainty]{ung_uncertainty()}}
+\code{\link[=ung_yield_table]{ung_yield_table()}}, \code{\link[=ung_volume]{ung_volume()}}, \code{\link[=ung_uncertainty]{ung_uncertainty()}}
 }
