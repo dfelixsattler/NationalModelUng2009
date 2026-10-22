@@ -12,8 +12,8 @@ gross merchantable volume (m³/ha) for 25 Canadian tree species. In the paper,
 this is the gross total volume of the live merchantable trees in the stand,
 where a merchantable tree is one with a diameter at breast height greater than
 9 cm. It is meant for
-people who need a volume-by-age curve, for example as input to the Carbon
-Budget Model (CBM), or for research on an area of Canada.
+those who need a volume-by-age curve, for example as input to the Carbon
+Budget Model (CBM). Users, however, should be aware of the limitations of the models (e.g., original authors' intended projection period; biases in the Nat1 equation, etc.). These are documented in the text below and in the associated functions.
 
 The paper has two models:
 
