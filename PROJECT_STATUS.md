@@ -1,7 +1,7 @@
 # Project status: NationalModelUng2009
 
-Status date: 2026-10-22. Package version: 0.1.0. Previous commit: `5fd867d`
-(this status describes the commit that follows it).
+Status date: 2026-10-22. Package version: 0.1.0. Latest commit: see `git log`
+(commit IDs changed when the history was rewritten on 2026-10-22).
 Quality gates at this date: `devtools::test()` gives 119 passing tests, 0 failures
 and 1 skipped (an opt-in test that needs `climr`). `R CMD check` with vignettes
 gives 0 errors, 0 warnings and 0 notes.
@@ -59,8 +59,7 @@ spreadsheets and CSV files (kept in the untracked `myfiles/` folder).
   cautions (young age, long horizon, sensitivity to climate, Nat1/Nat2
   disagreement) are listed on request by `ung_check()`.
 * **Age 0 is allowed** and gives 0 for H, G and V, as CBM yield tables expect.
-* Not to be done: contacting the authors (for unrounded parameters or for the
-  H/G parameter version).
+* Not to be done: contacting the authors (for unrounded parameters).
 
 ### Models and data
 
@@ -68,9 +67,18 @@ spreadsheets and CSV files (kept in the untracked `myfiles/` folder).
   Species can be given as a common name, a scientific name or a code
   (`ung_species()`).
 * **Parameters were verified cell by cell.** Nat1 (h, g, v coefficients and the three
-  Duan factors) was checked against four CSV files. Nat2 was checked against sheet
+  Duan factors) was checked against four CSV files and against the `Parms` and
+  `Fit` sheets of the authors' `system equations.xls` (all 25 species, 15
+  coefficients and 75 Duan factors). Nat2 was checked against sheet
   `V` of the authors' spreadsheet `Ung et al G&Y V, H and G models with
   DegreeDays.xls`. There were 0 differences.
+* **Nat1 H and G parameter version settled.** The H and G sheets of
+  `Ung et al G&Y V, H and G models with DegreeDays.xls` hold a second,
+  re-estimated set (each equation fitted on its own), which differs slightly.
+  The package uses the set from the simultaneous system fit: it matches the
+  authors' `system equations.xls`, the four CSV files, and Tables 4 and 5 of
+  the paper (black spruce, jack pine, trembling aspen). No author contact is
+  needed.
 * **The Nat1 volume equation was confirmed.** The authors' `system equations.xls`
   (sheet `Description`) gives `ln(V) = v30 + v31*ln(H) + v32*ln(G)` followed by
   the Duan factor. Volume therefore uses the uncorrected ln(H) and ln(G), and
@@ -239,37 +247,35 @@ how the models are used, not what they compute.
 
 Ordered by priority.
 
-1. **Remove `myfiles/` and `Rplots.pdf` from the git history.** They are
-   untracked since `5fd867d` but remain in earlier commits (and in old
-   `refs/agents/*` checkpoint refs). The user asked for them to be removed from
-   the history if possible. This needs a history rewrite and a force push.
-2. **The derived `dd0` has not been validated** (on hold by decision). It is an
+1. **The derived `dd0` has not been validated** (on hold by decision). It is an
    approximation built from regression-based degree-day variables and has not
    been compared with the climate values used to fit the models.
-3. **`ung_climate()` (climr) has not been compared with ClimateNA** for the same
+2. **`ung_climate()` (climr) has not been compared with ClimateNA** for the same
    point (on hold by decision). The opt-in test is skipped by default.
-4. **Thresholds are rules of thumb, not from the paper** (on hold by decision):
+3. **Thresholds are rules of thumb, not from the paper** (on hold by decision):
    15 % for sensitivity, 30 % for Nat1 versus Nat2, 10 years for young ages and
    for the horizon. They are set in `R/checks.R` and now affect only
    `ung_check()`, not warnings.
-5. **Provenance of the Nat1 H and G parameters.** The authors' email says the H
-   and G parameters in the later spreadsheet were re-estimated; only the volume
-   model was published. The package's Nat1 values match four CSV files and
-   Tables 4 and 5 of the paper for three species. The authors will not be
-   contacted, so this stays as is.
-6. **No independent validation** against observed stand data.
-7. **Licence and attribution.** Confirm that redistributing the authors'
+4. **No independent validation** against observed stand data.
+5. **Licence and attribution.** Confirm that redistributing the authors'
    parameters is allowed and that the attribution is what the authors expect.
-8. **Not set up:** continuous integration, a pkgdown site, and a release. The
+6. **Not set up:** continuous integration, a pkgdown site, and a release. The
    version is 0.1.0. `climr` is in Suggests.
+
+Resolved on 2026-10-22:
+
+* `myfiles/` and `Rplots.pdf` were removed from the whole git history
+  (`git filter-branch`) and the rewritten `main` was force-pushed. All commit
+  IDs changed; other clones must be re-cloned. GitHub may keep cached copies of
+  old commits until its own clean-up.
+* The Nat1 H and G parameter version (see section 2, *Models and data*).
 
 ## 6. Suggested next steps
 
-1. Purge `myfiles/` from the git history (item 1).
-2. Run the vignette in RStudio and confirm its text reads well with its output.
-3. When time allows, the items on hold: `dd0` and climr validation, and the
+1. Run the vignette in RStudio and confirm its text reads well with its output.
+2. When time allows, the items on hold: `dd0` and climr validation, and the
    thresholds.
-4. Consider an independent check against observed plot data, even a small one.
+3. Consider an independent check against observed plot data, even a small one.
 
 ## 7. Where things are
 
