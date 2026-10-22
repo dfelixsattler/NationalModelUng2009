@@ -102,13 +102,17 @@
 #' @param warn Logical. Set to `FALSE` to skip all diagnostic warnings and the
 #'   message about default climate.
 #'
-#' @details Arguments are recycled to a common length; lengths must be 1 or
-#'   equal to the longest argument.
+#' @details Arguments are matched **row by row** and recycled: each must have
+#'   length 1 or the same length as the longest. Species 1 is paired with age
+#'   1, species 2 with age 2, and so on. To predict several species over a range
+#'   of ages, use [ung_curve()], which combines every species with every age.
 #'
 #' @section Species-mean climate:
-#' Leave `dd0` and/or `map` as `NULL` to get a "typical stand" curve: the mean
-#' climate of the plots each species was fitted to is used, and a message says
-#' so. The values used are returned in the `dd0` and `map` columns. This is a
+#' Leave `dd0` and/or `map` as `NULL` to get a "typical stand" of each species:
+#' the mean climate of the plots that species was fitted to is used, and a
+#' message says so. Volume still depends on climate; the climate values used are
+#' returned in the `dd0` and `map` columns, and they differ between species.
+#' This is a
 #' convenience for comparing species or sketching a curve, **not** a prediction
 #' for a particular site; the fitting-plot mean can be far from the climate of
 #' the stand you care about. For a site, supply its own climate (see
@@ -133,8 +137,12 @@
 #'   [ung_species()]
 #' @export
 #' @examples
-#' # Typical-stand curves at each species' mean fitting-plot climate
+#' # A typical stand of each species at age 80, at that species' mean
+#' # fitting-plot climate (the climate used is shown in the dd0 and map columns)
 #' ung_volume(c("black spruce", "Douglas-fir"), age = 80)
+#'
+#' # Yield curves for two species: ung_curve() combines every species with every age
+#' plot(ung_curve(c("black spruce", "Douglas-fir"), age = 10:150, warn = FALSE))
 #'
 #' # Trembling aspen yield curve for a boreal site
 #' curve <- ung_volume("trembling aspen", age = seq(10, 150, by = 10),
@@ -195,7 +203,9 @@ ung_volume <- function(species, age, dd0 = NULL, map = NULL,
 
   n <- max(length(codes), lengths(nums))
   if (any(c(length(codes), lengths(nums)) %nin% c(1L, n))) {
-    stop("`species`, `age`, `dd0` and `map` must have length 1 or the same length.",
+    stop("`species`, `age`, `dd0` and `map` must have length 1 or the same length. ",
+         "Values are matched row by row. To predict several species over a ",
+         "range of ages, use `ung_curve()`.",
          call. = FALSE)
   }
 
@@ -220,8 +230,8 @@ ung_volume <- function(species, age, dd0 = NULL, map = NULL,
   if (length(d) > 0L) {
     message("Using the species mean of the fitting plots for ",
             paste0("`", d, "`", collapse = " and "),
-            " (see ?ung_envelope). This is a typical-stand curve, not a ",
-            "prediction for a specific site.")
+            " (see ?ung_envelope). The result is for a typical stand of each ",
+            "species, not for a specific site.")
   }
   invisible(x)
 }

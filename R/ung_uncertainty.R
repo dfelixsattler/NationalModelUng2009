@@ -158,8 +158,9 @@ ung_uncertainty <- function(species, age, dd0 = NULL, map = NULL,
 #'                      map = 700, seed = 1, warn = FALSE)
 #' plot(f)
 plot.ung_uncertainty <- function(x, ...) {
-  grp <- interaction(x$species, x$dd0, x$map, drop = TRUE)
-  levels_g <- levels(grp)
+  info <- .curve_groups(x)
+  grp <- info$group
+  levels_g <- info$levels
   colors <- grDevices::hcl.colors(max(length(levels_g), 2L), "Dark 3")
   models <- sort(unique(x$model))
   lab <- paste0(round(100 * attr(x, "interval")), "% interval")
@@ -182,11 +183,11 @@ plot.ung_uncertainty <- function(x, ...) {
     }
   }
   graphics::legend("topleft",
-                   legend = c(levels_g, paste(models, "median"), lab),
+                   legend = c(info$labels, paste(models, "median"), lab),
                    col = c(colors[seq_along(levels_g)], rep("black", length(models)),
                            "grey60"),
                    lty = c(rep(1, length(levels_g)), seq_along(models), NA),
                    pch = c(rep(NA, length(levels_g) + length(models)), 15),
-                   bty = "n", cex = 0.8, title = "species.dd0.map")
+                   bty = "n", cex = 0.8)
   invisible(x)
 }

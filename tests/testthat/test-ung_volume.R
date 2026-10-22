@@ -54,6 +54,22 @@ test_that("fitting-data envelope is per species and internally consistent", {
   expect_no_warning(ung_volume("PSEU.MEN", 100, e$dd0_mean, e$map_mean))
 })
 
+test_that("ung_curve combines every species with every age", {
+  d <- ung_curve(c("black spruce", "Douglas-fir"), age = 10:80, warn = FALSE)
+  expect_s3_class(d, "ung_volume")
+  expect_equal(nrow(d), 2 * 71)
+  expect_equal(unique(d$species), c("PICE.MAR", "PSEU.MEN"))
+  # species mean climate, different for each species
+  expect_equal(length(unique(d$dd0)), 2)
+  expect_equal(nrow(ung_curve("white spruce", 10:20, 2200, 600, warn = FALSE)), 11)
+  expect_error(ung_curve(c("white spruce", "jack pine"), 10:20, dd0 = 1:3),
+               "one value per species")
+  # ung_volume matches row by row and the error points to ung_curve()
+  expect_error(ung_volume(c("black spruce", "Douglas-fir"), age = 10:80),
+               "ung_curve")
+  expect_silent(plot(d))
+})
+
 test_that("diagnostic warnings fire with their own classes", {
   expect_ung_warning(ung_volume("POPU.TRE", 5, 2200, 750), "ung2009_warning_age")
   expect_ung_warning(ung_volume("POPU.TRE", 300, 2200, 750), "ung2009_warning_age")

@@ -1,11 +1,19 @@
 #' Sensitivity of predicted volume to small changes in climate
 #'
+#' **Purpose.** Climate values for a site are never exact: different climate
+#' sources, or different averaging periods, give different `dd0` and `map`. This
+#' function answers the question "if my `dd0` is wrong by 100 degree-days, or my
+#' `map` by 100 mm, how much does the predicted volume change?" A large
+#' percentage means the prediction is only as good as the climate values, and
+#' the result should be read with caution.
+#'
 #' The Ung et al. (2009) parameters make predicted volume respond strongly, and
 #' sometimes in opposite directions, to modest differences in the climate
-#' inputs. This function quantifies that by re-running the model with
-#' `dd0 +/- d_dd0` and `map +/- d_map` and reporting the largest relative
+#' inputs. This function re-runs the model with
+#' `dd0 +/- d_dd0` and `map +/- d_map` and reports the largest relative
 #' change in volume. [ung_volume()] uses it to issue a warning when the change
-#' exceeds 15 %.
+#' exceeds 15 %. The percentage depends on the species and the age, not on the
+#' climate values themselves.
 #'
 #' Percent changes are `NA` where predicted volume is below 1 m3/ha, because a
 #' relative change is not meaningful for a near-empty stand.
@@ -14,10 +22,11 @@
 #' @param d_dd0 Perturbation applied to `dd0` (degree-days). Default 100.
 #' @param d_map Perturbation applied to `map` (mm). Default 100.
 #'
-#' @return A data.frame with one row per input row and model: `row`, `species`,
-#'   `age`, `dd0`, `map`, `model`, `volume` (m3/ha at the supplied climate),
-#'   `dd0_change_pct`, `map_change_pct` (largest absolute % change in volume for
-#'   +/- the perturbation) and `max_change_pct` (the larger of the two).
+#' @return A data.frame with one row per input row and model: `row` (input row
+#'   number), `species`, `age`, `dd0`, `map`, `model` (Nat1 or Nat2), `volume`
+#'   (m3/ha at the supplied climate), `dd0_change_pct` (largest % change in
+#'   volume when `dd0` is raised or lowered by `d_dd0`), `map_change_pct` (the
+#'   same for `map` and `d_map`) and `max_change_pct` (the larger of the two).
 #' @seealso [ung_volume()]
 #' @export
 #' @examples

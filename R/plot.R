@@ -24,9 +24,10 @@ plot.ung_volume <- function(x, what = c("V", "H", "BA"), ...) {
   }
   units <- c(V = "Volume (m3/ha)", H = "Height (m)", BA = "Basal area (m2/ha)")[[what]]
 
-  # One group per species x climate combination
-  grp <- interaction(x$species, x$dd0, x$map, drop = TRUE)
-  levels_g <- levels(grp)
+  # One group per species x climate combination, labelled in plain words
+  info <- .curve_groups(x)
+  grp <- info$group
+  levels_g <- info$levels
   colors <- grDevices::hcl.colors(max(length(levels_g), 2L), "Dark 3")
 
   graphics::plot(range(x$age, na.rm = TRUE),
@@ -39,9 +40,22 @@ plot.ung_volume <- function(x, what = c("V", "H", "BA"), ...) {
       graphics::lines(d$age, d[[cols[k]]], col = colors[g], lty = k, lwd = 2)
     }
   }
-  graphics::legend("topleft", legend = c(levels_g, sub("_", " ", cols)),
+  graphics::legend("topleft",
+                   legend = c(info$labels, sub("_", " ", cols)),
                    col = c(colors[seq_along(levels_g)], rep("black", length(cols))),
                    lty = c(rep(1, length(levels_g)), seq_along(cols)),
-                   bty = "n", cex = 0.8, title = "species.dd0.map")
+                   bty = "n", cex = 0.8)
   invisible(x)
+}
+
+# Group rows by species and climate. Returns the group of each row, the group
+# keys (in order of appearance) and a readable label per key, such as
+# "PICE.MAR (dd0 2231, map 1030)".
+.curve_groups <- function(x) {
+  key <- paste(x$species, x$dd0, x$map, sep = "|")
+  keys <- unique(key)
+  first <- match(keys, key)
+  labels <- sprintf("%s (dd0 %s, map %s)", x$species[first],
+                    round(x$dd0[first]), round(x$map[first]))
+  list(group = key, levels = keys, labels = labels)
 }

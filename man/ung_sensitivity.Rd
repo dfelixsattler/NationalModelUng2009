@@ -35,20 +35,29 @@ If \code{NULL} (default), the species mean of the fitting plots is used
 \item{d_map}{Perturbation applied to \code{map} (mm). Default 100.}
 }
 \value{
-A data.frame with one row per input row and model: \code{row}, \code{species},
-\code{age}, \code{dd0}, \code{map}, \code{model}, \code{volume} (m3/ha at the supplied climate),
-\code{dd0_change_pct}, \code{map_change_pct} (largest absolute \% change in volume for
-+/- the perturbation) and \code{max_change_pct} (the larger of the two).
+A data.frame with one row per input row and model: \code{row} (input row
+number), \code{species}, \code{age}, \code{dd0}, \code{map}, \code{model} (Nat1 or Nat2), \code{volume}
+(m3/ha at the supplied climate), \code{dd0_change_pct} (largest \% change in
+volume when \code{dd0} is raised or lowered by \code{d_dd0}), \code{map_change_pct} (the
+same for \code{map} and \code{d_map}) and \code{max_change_pct} (the larger of the two).
 }
 \description{
-The Ung et al. (2009) parameters make predicted volume respond strongly, and
-sometimes in opposite directions, to modest differences in the climate
-inputs. This function quantifies that by re-running the model with
-\verb{dd0 +/- d_dd0} and \verb{map +/- d_map} and reporting the largest relative
-change in volume. \code{\link[=ung_volume]{ung_volume()}} uses it to issue a warning when the change
-exceeds 15 \%.
+\strong{Purpose.} Climate values for a site are never exact: different climate
+sources, or different averaging periods, give different \code{dd0} and \code{map}. This
+function answers the question "if my \code{dd0} is wrong by 100 degree-days, or my
+\code{map} by 100 mm, how much does the predicted volume change?" A large
+percentage means the prediction is only as good as the climate values, and
+the result should be read with caution.
 }
 \details{
+The Ung et al. (2009) parameters make predicted volume respond strongly, and
+sometimes in opposite directions, to modest differences in the climate
+inputs. This function re-runs the model with
+\verb{dd0 +/- d_dd0} and \verb{map +/- d_map} and reports the largest relative
+change in volume. \code{\link[=ung_volume]{ung_volume()}} uses it to issue a warning when the change
+exceeds 15 \%. The percentage depends on the species and the age, not on the
+climate values themselves.
+
 Percent changes are \code{NA} where predicted volume is below 1 m3/ha, because a
 relative change is not meaningful for a near-empty stand.
 }

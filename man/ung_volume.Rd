@@ -58,8 +58,10 @@ back-transformed with the Duan (1983) smearing correction factor.
 again back-transformed with a Duan correction factor.
 }
 
-Arguments are recycled to a common length; lengths must be 1 or
-equal to the longest argument.
+Arguments are matched \strong{row by row} and recycled: each must have
+length 1 or the same length as the longest. Species 1 is paired with age
+1, species 2 with age 2, and so on. To predict several species over a range
+of ages, use \code{\link[=ung_curve]{ung_curve()}}, which combines every species with every age.
 }
 \section{Intended use and time horizon}{
 
@@ -150,9 +152,11 @@ with provincial models.
 
 \section{Species-mean climate}{
 
-Leave \code{dd0} and/or \code{map} as \code{NULL} to get a "typical stand" curve: the mean
-climate of the plots each species was fitted to is used, and a message says
-so. The values used are returned in the \code{dd0} and \code{map} columns. This is a
+Leave \code{dd0} and/or \code{map} as \code{NULL} to get a "typical stand" of each species:
+the mean climate of the plots that species was fitted to is used, and a
+message says so. Volume still depends on climate; the climate values used are
+returned in the \code{dd0} and \code{map} columns, and they differ between species.
+This is a
 convenience for comparing species or sketching a curve, \strong{not} a prediction
 for a particular site; the fitting-plot mean can be far from the climate of
 the stand you care about. For a site, supply its own climate (see
@@ -161,8 +165,12 @@ the stand you care about. For a site, supply its own climate (see
 }
 
 \examples{
-# Typical-stand curves at each species' mean fitting-plot climate
+# A typical stand of each species at age 80, at that species' mean
+# fitting-plot climate (the climate used is shown in the dd0 and map columns)
 ung_volume(c("black spruce", "Douglas-fir"), age = 80)
+
+# Yield curves for two species: ung_curve() combines every species with every age
+plot(ung_curve(c("black spruce", "Douglas-fir"), age = 10:150, warn = FALSE))
 
 # Trembling aspen yield curve for a boreal site
 curve <- ung_volume("trembling aspen", age = seq(10, 150, by = 10),

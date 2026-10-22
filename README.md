@@ -39,10 +39,15 @@ plot(curve)
 clim <- ung_climate(lon = -105.5, lat = 54.1, elev = 500)
 ung_volume("black spruce", age = 80, dd0 = clim$dd0, map = clim$map)
 
-# How fragile is the answer? (volume change for +/- 100 degree-days or 100 mm)
+# Yield curves for several species (every species at every age)
+plot(ung_curve(c("black spruce", "Douglas-fir"), age = 10:150))
+
+# How fragile is the answer? If dd0 is off by 100 degree-days, or map by 100 mm,
+# by how many percent does the predicted volume change?
 ung_sensitivity("jack pine", age = 80, dd0 = 2200, map = 800)
 
-# Typical-stand curve: omit dd0/map to use each species' mean fitting-plot climate
+# A typical stand of each species at age 80: omit dd0/map to use each species'
+# mean fitting-plot climate (shown in the dd0 and map columns of the result)
 ung_volume(c("black spruce", "Douglas-fir"), age = 80)
 
 # Climate-uncertainty fan (Monte Carlo over dd0 and map)
@@ -54,7 +59,9 @@ ung_species()   # the 25 supported species
 ```
 
 Many stands at once: pass vectors (or data frame columns) for `species`, `age`,
-`dd0` and `map`; results come back as one row per stand.
+`dd0` and `map`; results come back as one row per stand. The values are matched
+row by row (species 1 with age 1, and so on). To combine every species with
+every age, use `ung_curve()`.
 
 ## Climate inputs: read this first
 
@@ -81,7 +88,8 @@ Many stands at once: pass vectors (or data frame columns) for `species`, `age`,
 * Leave `dd0`/`map` out of `ung_volume()` (or `ung_sensitivity()`,
   `ung_uncertainty()`) and the species mean of the fitting plots
   (`ung_envelope$dd0_mean`, `$map_mean`) is used, with a message. This gives a
-  *typical-stand* curve for comparing species; it is **not** a site prediction.
+  *typical stand* of each species for comparing species; it is **not** a site
+  prediction.
 * `ung_uncertainty()` draws `n` (`dd0`, `map`) pairs from an untruncated bivariate
   normal (bounded at 0) around your climate and reports the median and a central
   interval of volume. By default the SDs are the species' among-plot SDs in the
