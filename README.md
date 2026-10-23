@@ -75,17 +75,17 @@ A step-by-step worked example is in the vignette:
 directly.
 
 Nat1 predicts H and G first and then puts these predictions into its volume
-equation. The scripts of the current package follow the published equations and parameters. As such, Nat1 volume is **biased low**: across the 25 species,
+equation. The scripts of the current package use the published equations and parameters. As such, Nat1 volume is **biased low**: across the 25 species,
 at age 80 and each species' average climate, Nat2 is a median of about
-**20 % higher** than Nat1 (see next section). Nat1 is still available, with an optional
-correction.
+**20 % higher** than Nat1 (see next section). For this reason, Nat1 is has been made available with an optional 
+bias correction.
 
-### Why Nat1 volume needs a correction
+### Why Nat1 volume includes a correction
 
 1. The models predict the *logarithm* of volume. Taking `exp()` of a predicted
    log gives the middle (median) stand, not the average stand (assuming the
    errors on the log scale are roughly symmetric, as in a normal distribution).
-2. A Duan factor (as used by the original authors and always applied by the package) is multiplied on to move the median up to
+2. A Duan factor (as used by the original authors and always applied within this package) is multiplied on to move the median up to
    the average. Its size should reflect *all* the scatter of ln(V) at a given
    age and climate.
 3. In Nat1 that scatter has three sources: (i) the scatter of the volume equation
@@ -98,7 +98,7 @@ correction.
 5. Nat2 has a single equation from age and climate straight to volume. Its
  residual already contains all the scatter, so its Dua factor (`CDv2`, 1.15 for
    black spruce) accounts for everything and needs no correction.
-6. For Nat1, the missing scatter can be estimated. Each Duan factor gives the
+6. For Nat1, the missing scatter can be estimated (given some assumptions). Each Duan factor gives the
    variance of its log errors, about `2 * ln(CD)`. The extra variance that H
    and G add to ln(V) is
    `s2 = v31^2 * 2 * ln(CDh) + v32^2 * 2 * ln(CDg)`, and a second-order Taylor
@@ -110,46 +110,38 @@ The correction assumes that the errors in H and G are **uncorrelated** (the
 authors did not publish their correlation), that the log-scale errors are
 roughly normal, and that they are independent of the volume equation's own
 scatter. It ranges from 1.05 to 1.46 depending on the species (1.29 for black
-spruce). With it, the median gap between Nat2 and Nat1 falls from about 20 % to
-under 1 %, which supports this explanation.
+spruce). With the correction applied, the median gap between Nat2 and Nat1 falls from about 20 % to
+under 1 %.
 
-This matters for the Carbon Budget Model and similar tools. Normally, a given yield curve is used for every hectare of a particular stand type, and one multiplies the yields by total area to get total volume for that particular stand type. That needs the average volume per hectare, not the volume of the typical (median) stand, which is what Nat1 without the correction would provide: without the correction, Nat1 totals come out too low.  The correction that was added as an option in this package attempts to correct for this. It was not part of the published model, so it is "off" by default.
+This matters for the Carbon Budget Model and similar tools. Normally, a chosen yield curve is used to represent every hectare of a particular stand type (i.e. stratum), and one multiplies the yields by total area to get total volume for that particular stand type. That calculation needs the average volume per hectare, not the volume per hectare of the median stand.  The correction for Nat1  was added as an option in this package as it was not part of the published model.
 
-### How Nat1 links height and basal area to volume
 
-The Nat1 volume equation is
-`ln(V) = v30 + v31 * ln(H) + v32 * ln(G)`. The `ln(H)` and `ln(G)` it uses are
-the values straight from the height and basal-area equations, **before** the
-Duan correction factors are applied to H and G.
+## A Note on Parameters
 
-## Parameters are rounded: read this
-
-The paper and every file supplied by the authors give the model parameters to
-only **4 decimal places** (a few large values to 4 significant digits). The
-unrounded values are not available and will not become available, so the
-package uses the rounded ones.
+The paper and the files that were supplied to create this package  give the model parameters to
+only **4 decimal places** (a few large values to 4 significant digits).
 
 This rounding is not harmless. Some parameters are tiny and are multiplied by
 large climate values: for example, a parameter of 0.0001 multiplied by 2000
 degree-days adds 0.2 to the logarithm of height, but the true parameter could be
 anywhere between 0.00005 and 0.00015. Moving every parameter at random within
-its rounding interval changes predicted volume (at age 80 and each species'
-average climate) by about:
+its rounding interval changes predicted volume. As an example, at age 80 and using each species'
+average climate, changes are around:
 
 * **9 %** for Nat1 (standard deviation; from 3 % to 16 % depending on the species);
 * **4 %** for Nat2 (at most 9 %).
 
-This uncertainty comes on top of all others. `ung_uncertainty()` and
-`ung_yield_table(uncertainty = TRUE)` include it by default.
+This uncertainty comes on top of the other uncertainties. Users of the package must simply be aware of this. It is baked-in to the `ung_uncertainty()` and
+`ung_yield_table(uncertainty = TRUE)` functions.
 
 ## Uncertainty
 
-Uncertainty is part of the main workflow. `ung_uncertainty()` (and
-`ung_yield_table(uncertainty = TRUE)`) repeats the prediction many times
+Users of the package should include uncertainty as part of their workflow. This is possible though `ung_uncertainty()` and
+`ung_yield_table(uncertainty = TRUE). These functions repeat the prediction many times
 (Monte Carlo simulation), each time with:
 
 * slightly different climate: `dd0` and `map` are drawn from a normal
-  distribution around your values. By default the spread is the variation of
+  distribution around the values supplied. By default the spread is the variation of
   `dd0` and `map` among the plots used to fit that species' model. This is
   variation between places, not between years, and not the error of a climate
   dataset. If you know the uncertainty of your own climate values, give it with
@@ -159,8 +151,8 @@ Uncertainty is part of the main workflow. `ung_uncertainty()` (and
 
 The result is the median and a central interval (90 % by default) of the
 predictions. It does **not** include the statistical uncertainty of the fitted
-parameters (standard errors exist for Nat1 only, without the correlations needed
-to combine them) or the plot-to-plot variation around the model. Real stands of
+parameters. Data provided to create this package only included standard errors  for Nat1, without the correlations needed
+to combine them or the plot-to-plot variation around the model. Real stands of
 the same age and climate will vary more than the interval shows.
 
 ## Climate inputs
@@ -171,36 +163,46 @@ the same age and climate will vary more than the interval shows.
 * Be careful with names in climate software. `DD5` (degree-days above 5 °C) is
   **not** `dd0`. In ClimateNA, `DD_0`, and in climr, `DDsub0`, are degree-days
   **below** 0 °C, which measure how cold the winter is: the opposite quantity.
-  Passing any of these as `dd0` gives wrong answers.
-* No climate package provides `dd0` directly. `ung_climate()` (climr) and
-  `ung_climate_from_climatena()` calculate it from three variables they do
-  provide: degree-days above 18 °C, below 18 °C and below 0 °C. This is an
+* Climate packages tested (ClimateNA, climr) during the creation of the current package did not provide `dd0` directly. `ung_climate()` (climr) and
+  `ung_climate_from_climatena()` derive it from the variables which are
+  provided: degree-days above 18 °C, below 18 °C and below 0 °C. This is an
   approximation and has not yet been checked against the climate the authors
   used.
 * `map` is the yearly precipitation in **mm**.
-* Give **one value of each per stand**, the same at every age. The models were
+* The models use climate, but are not climate-sensitive. For the two climate variables, users supply  **one  value of each per stand**. Those same values are used at every age. The models were
   fitted with one `dd0` and one `map` per plot, describing the long-term climate
   of the location, not the weather of a particular year.
 * The authors used interpolated climate normals "to which inter-annual
-  variability has been restored" (McKenney et al. 2001), and do not explain
-  this further. Our reading is that they started from maps of long-term average
+  variability has been restored" (McKenney et al. 2001). This is interpreted as meaning that the authors  started from maps of long-term average
   climate (built from weather-station records) and then added back the
   year-to-year ups and downs that averaging removes. The averaging period is not
-  stated. Use values that describe the location over several decades (for
-  example the 1981-2010 normals) and report which you used.
+  stated. Thus, it is recommended that users apply values that describe the location over several decades (for
+  example the 1981-2010 normals).
 * If you leave out `dd0` and/or `map`, the package uses, **for each species, the
   average climate of the plots used to fit its model** (for example 2079
-  degree-days and 965 mm for black spruce) and says so in a message. The result
-  is then a typical stand of that species, not a prediction for a particular
-  site.
+  degree-days and 965 mm for black spruce). These values were taken directly from the paper (Table 2) and the files that were supplied to create this package.
 * Climate in these models is **descriptive, not predictive**: do not use future
   climate scenarios to estimate the effects of climate change.
+
+
+## Age 0
+
+Starting yield curves from Age 0 is allowed and gives 0 for H, G and V. However, note that stand ages below around 10 years were not  used in fitting the models and, therefore, may not be reliable (see `ung_check()`).
+
+## Limitations (from the paper)
+
+* The authors state: "the models developed here were designed for increment
+  predictions over very short (< 10 years) intervals.
+* The models were fitted to plots measured once and dominated by one species
+  (at least 75 % of basal area). For mixed stands, apply the model to each
+  species.
+* Their ability to predict growth over time was moderate to poor (see Fig. 2 in the paper).
 
 
 ## Warnings and checks
 
 `ung_volume()` (and the functions built on it) gives **at most one warning per
-call**, written in plain English, and only for problems you can do something
+call** for problems you can do something
 about:
 
 * an input is missing;
@@ -208,53 +210,9 @@ about:
 * the climate is outside the range of the fitting plots;
 * predicted volume or basal area is larger than in any fitting plot.
 
-Other cautions apply to almost every yield curve (young ages, curves longer
-than the 10-year span the models were designed for, strong sensitivity to
-climate, Nat1 and Nat2 disagreeing). Warning about them every time would teach
-users to ignore warnings, so they are listed only when you ask, with
-`ung_check()`. All warnings have the class `ung2009_warning`; `warn = FALSE`
-turns them off.
+Warnings may also be listed on-demand with
+`ung_check()`. All other cautions perviously discussed still apply.
 
-## Age 0
-
-Age 0 is allowed and gives 0 for H, G and V, which is how yield tables such as
-those used by the CBM start. Below about 10 years, and below the youngest fitted
-stand, predictions are close to 0 and are not reliable (see `ung_check()`).
-
-## Limitations (from the paper)
-
-* The authors state: "the models developed here were designed for increment
-  predictions over very short (< 10 years) intervals, as requested within the
-  context of the CNFI. The absence of safeguards, such as an empirical
-  adjustment to the number of merchantable stems per hectare, means that the
-  user who may want to use these models for longer-term projections should use
-  caution." (CNFI = Canadian National Forest Inventory.) A yield curve over many
-  decades is a longer-term projection in this sense.
-* The models were fitted to plots measured once and dominated by one species
-  (at least 75 % of basal area). For mixed stands, apply the model to each
-  species.
-* Their ability to predict growth over time was moderate to poor, similar to
-  provincial models.
-
-## Where the parameters come from
-
-The parameters are stored in `data-raw/ung_parameters.csv` and built by
-`data-raw/build_parameters.R` from an R implementation supplied with the
-authors' files.
-
-* **Nat1** (H, G and V parameters and their three Duan factors): checked value by
-  value against four files from the authors (`Parms.csv`,
-  `Ung2009_NatOneWide.csv`, `NatOneWide.csv`, `Fit.csv`) and against Tables 4
-  and 5 of the paper for black spruce, jack pine and trembling aspen.
-* **Nat2**: checked against sheet `V` of the authors' spreadsheet
-  (`Ung et al G&Y V, H and G models with DegreeDays.xls`). The `H` and `G`
-  sheets of that file hold slightly different, unpublished estimates and are not
-  used.
-* **Fitting-data ranges** (`ung_envelope`): mean, standard deviation, minimum
-  and maximum per species, from the spreadsheet's `DATASUMMARY` sheet
-  (`data-raw/build_envelope.R`).
-
-The authors' files are kept outside the git repository.
 
 ## Licence
 
