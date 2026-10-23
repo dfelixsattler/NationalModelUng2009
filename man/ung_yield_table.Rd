@@ -13,6 +13,7 @@ ung_yield_table(
   ...,
   nat1_bias_correction = FALSE,
   uncertainty = FALSE,
+  seed = NULL,
   format = c("long", "wide"),
   warn = TRUE
 )
@@ -33,7 +34,7 @@ predicts average volume directly; see \emph{Which model to use} in
 \code{\link[=ung_volume]{ung_volume()}}.}
 
 \item{...}{Passed to \code{\link[=ung_uncertainty]{ung_uncertainty()}} when \code{uncertainty = TRUE}, for
-example \code{n}, \code{interval}, \code{sd_dd0}, \code{sd_map} or \code{seed}. Arguments after
+example \code{n}, \code{interval}, \code{sd_dd0}, \code{sd_map} or \code{rounding}. Arguments after
 \code{...} must be named in full.}
 
 \item{nat1_bias_correction}{Logical. \code{TRUE} multiplies Nat1 volume by the
@@ -44,6 +45,12 @@ approximate correction described in \emph{Why Nat1 volume needs a correction}. D
 interval from \code{\link[=ung_uncertainty]{ung_uncertainty()}}, which includes climate uncertainty and
 the rounding of the parameters. With the default climate spread this
 interval is wide; see \code{\link[=ung_uncertainty]{ung_uncertainty()}}. Default \code{FALSE}.}
+
+\item{seed}{Optional integer, used only when \code{uncertainty = TRUE}. The
+interval comes from random draws, so without a seed \code{lower} and \code{upper}
+change slightly each time you run the same call. Give any whole number
+(for example \code{seed = 1}) to get exactly the same interval every time. The
+\code{volume} column is not affected. Default \code{NULL} (no seed).}
 
 \item{format}{\code{"long"} (default): one row per species, climate and age, with
 columns \code{species}, \code{dd0}, \code{map}, \code{age}, \code{volume} (and \code{lower}, \code{upper}).

@@ -19,8 +19,13 @@
 #'   column of volume per age, named `vol_0`, `vol_10`, and so on. With
 #'   `uncertainty = TRUE`, the wide table has three rows per curve, told apart
 #'   by the column `statistic` (`"volume"`, `"lower"`, `"upper"`).
+#' @param seed Optional integer, used only when `uncertainty = TRUE`. The
+#'   interval comes from random draws, so without a seed `lower` and `upper`
+#'   change slightly each time you run the same call. Give any whole number
+#'   (for example `seed = 1`) to get exactly the same interval every time. The
+#'   `volume` column is not affected. Default `NULL` (no seed).
 #' @param ... Passed to [ung_uncertainty()] when `uncertainty = TRUE`, for
-#'   example `n`, `interval`, `sd_dd0`, `sd_map` or `seed`. Arguments after
+#'   example `n`, `interval`, `sd_dd0`, `sd_map` or `rounding`. Arguments after
 #'   `...` must be named in full.
 #'
 #' @details Each species is combined with every age, as in [ung_curve()]. To
@@ -53,7 +58,8 @@
 ung_yield_table <- function(species, age = seq(0, 250, by = 10), dd0 = NULL,
                             map = NULL, model = c("Nat2", "Nat1"), ...,
                             nat1_bias_correction = FALSE, uncertainty = FALSE,
-                            format = c("long", "wide"), warn = TRUE) {
+                            seed = NULL, format = c("long", "wide"),
+                            warn = TRUE) {
   model <- match.arg(model)
   format <- match.arg(format)
   .check_logical(uncertainty, "uncertainty")
@@ -70,7 +76,7 @@ ung_yield_table <- function(species, age = seq(0, 250, by = 10), dd0 = NULL,
     u <- ung_uncertainty(curve$species, curve$age, curve$dd0, curve$map,
                          model = model,
                          nat1_bias_correction = nat1_bias_correction,
-                         warn = FALSE, ...)
+                         seed = seed, warn = FALSE, ...)
     out$lower <- u$lower
     out$upper <- u$upper
   }

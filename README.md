@@ -25,7 +25,7 @@ The paper has two models:
 
 ```r
 # install.packages("remotes")
-remotes::install_github("dfelixsattler/NationalModelUng2009")
+remotes::install_github("dfelixsattler/NationalModelUng2009", build_vignettes = TRUE)
 # Optional, to look up climate for coordinates:
 remotes::install_github("bcgov/climr")
 ```
