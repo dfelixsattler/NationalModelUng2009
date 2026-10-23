@@ -11,12 +11,16 @@
 #' | `older_than_data` | the stand is older than any stand used to fit the species' model | yes |
 #' | `climate_outside_data` | `dd0` or `map` is outside the climate of the species' fitting plots | yes |
 #' | `output_beyond_data` | predicted volume or basal area is larger than in any fitting plot | yes |
+#' | `curve_not_rising` | at this climate, Nat2 volume reaches half of its maximum before age 10 or does not rise with age; Nat1 may give a more realistic curve | yes (Nat2 only) |
 #' | `young_age` | the stand is younger than 10 years or than any fitting plot; predictions are near zero and unreliable | no |
 #' | `long_horizon` | one species and climate is predicted over more than 10 years of age (a yield curve); the models were designed for changes over less than 10 years | no |
 #' | `sensitive_to_climate` | 100 degree-days or 100 mm more or less changes volume by more than 15 % (see [ung_sensitivity()]) | no |
 #' | `models_disagree` | Nat1 and Nat2 volumes differ by more than 30 % | no |
 #'
-#' Age 0 rows are never flagged as young: they are set to 0 by definition.
+#' Age 0 rows are never flagged as young or as `curve_not_rising`: they are
+#' set to 0 by definition. `ung_check()` always calculates both Nat1 and
+#' Nat2, so it can flag rows for a model you did not use (for example, Nat1
+#' basal area in `output_beyond_data` for a Nat2 yield table).
 #' The limits of 10 years, 15 % and 30 % are rules of thumb chosen for this
 #' package; they are not from the paper. The fitting-data ranges are in
 #' [ung_envelope].
@@ -90,6 +94,10 @@ ung_check <- function(x, rows = FALSE) {
   output_beyond_data = paste(
     "predicted volume or basal area is larger than in any plot used to fit",
     "the model for this species."),
+  curve_not_rising = paste(
+    "at this climate, Nat2 volume reaches half of its maximum before age",
+    .young_age, "or does not rise with age at all, which is not a realistic",
+    "yield curve. Consider Nat1 (model = \"Nat1\", nat1_bias_correction = TRUE)."),
   young_age = paste(
     "the stand is younger than", .young_age, "years or younger than any stand",
     "used to fit the model; predictions are close to zero and not reliable."),
@@ -123,6 +131,15 @@ ung_check <- function(x, rows = FALSE) {
   }
   if ("G_Nat1" %in% names(out)) too_big <- too_big | out$G_Nat1 > env$g_max
   f$output_beyond_data <- too_big
+
+  # Nat2: ln(V) = a + b / age. Volume reaches half its maximum at age -b / ln(2),
+  # and never rises when b >= 0. Flag curves that reach half before .young_age.
+  if ("V_Nat2" %in% names(out)) {
+    p <- NationalModelUng2009::ung_parameters
+    p <- p[match(out$species, p$species), , drop = FALSE]
+    b <- p$v20 + p$v21 * out$dd0 + p$v22 * out$map
+    f$curve_not_rising <- age > 0 & b > -log(2) * .young_age
+  }
 
   f$young_age <- age > 0 & (age < .young_age | age < env$age_min)
 
@@ -161,8 +178,10 @@ ung_check <- function(x, rows = FALSE) {
 # Issue at most one warning, listing only the checks the user can act on.
 .warn_summary <- function(out) {
   keys <- c("missing_input", "older_than_data", "climate_outside_data",
-            "output_beyond_data")
-  flags <- .flag_rows(out, sensitivity = FALSE)[keys]
+            "output_beyond_data", "curve_not_rising")
+  flags <- .flag_rows(out, sensitivity = FALSE)
+  keys <- intersect(keys, names(flags))
+  flags <- flags[keys]
   n <- vapply(flags, sum, integer(1))
   if (any(n > 0L)) {
     lines <- sprintf("* %d of %d row(s): %s", n[n > 0L], nrow(out),

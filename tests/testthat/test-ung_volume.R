@@ -64,6 +64,16 @@ test_that("a typical in-range stand gives no warnings", {
   expect_no_warning(ung_volume("PICE.MAR", 80, 2079, 965))
 })
 
+test_that("a Nat2 curve that barely rises with age is flagged and warned", {
+  # interior Douglas-fir, dry site inside the fitting climate
+  expect_warning(ung_volume("PSEU.MEN", 50, 2617, 506, model = "Nat2"),
+                 "Nat2 volume reaches half", class = "ung2009_warning")
+  expect_no_warning(ung_volume("PSEU.MEN", 50, 2617, 506, model = "Nat1"))
+  ck <- ung_check(ung_curve("PSEU.MEN", c(0, 50, 100), 2617, 506,
+                            model = "Nat2", warn = FALSE))
+  expect_equal(ck$rows_flagged[ck$check == "curve_not_rising"], 2)
+})
+
 test_that("fitting-data envelope is per species and internally consistent", {
   env <- ung_envelope
   expect_equal(nrow(env), 25)
@@ -181,6 +191,24 @@ test_that("ung_yield_table gives a simple long or wide table, Nat2 by default", 
   expect_s3_class(ung_check(u), "data.frame")
 })
 
+test_that("ung_yield_table() labels curves with id in long and wide layouts", {
+  y <- ung_yield_table(c("PICE.MAR", "PICE.MAR", "PINU.BAN"), age = c(0, 50),
+                       dd0 = c(1900, 2200, 2200), map = c(500, 900, 900),
+                       id = c("A", "B", "B"), warn = FALSE)
+  expect_equal(names(y)[1], "id")
+  expect_equal(y$id, c("A", "A", "B", "B", "B", "B"))
+  expect_equal(y$volume[y$id == "B" & y$species == "PINU.BAN" & y$age == 50],
+               ung_volume("PINU.BAN", 50, 2200, 900, model = "Nat2",
+                          warn = FALSE)$V_Nat2)
+  w <- ung_yield_table(c("PICE.MAR", "PICE.MAR", "PINU.BAN"), age = c(0, 50),
+                       dd0 = c(1900, 2200, 2200), map = c(500, 900, 900),
+                       id = c("A", "B", "B"), format = "wide", warn = FALSE)
+  expect_equal(w$id, c("A", "B", "B"))
+  expect_equal(w$vol_50, y$volume[y$age == 50])
+  expect_s3_class(ung_check(y), "data.frame")
+  expect_error(ung_yield_table("PICE.MAR", id = c("A", "B")), "`id`")
+})
+
 test_that("ung_climate returns dd0 and map from climr (opt-in, needs network)", {
   skip_on_cran()
   skip_if_not_installed("climr")
@@ -195,4 +223,34 @@ test_that("ung_climate validates inputs before calling climr", {
   skip_if_not_installed("climr")
   expect_error(ung_climate(c(-105, -106), 54, 500), "equal length")
   expect_error(ung_climate(-105, 54, NA_real_), "missing")
+  expect_error(ung_climate(-105, 54, 500, years = "2010"), "`years`")
+})
+
+test_that("ung_climate(source = \"climatena\") checks its inputs and runs ClimateNA", {
+  skip_on_os(c("mac", "linux", "solaris"))
+  expect_error(ung_climate(-105.5, 54.1, 500, source = "climatena", exe = "no.exe"),
+               "`exe`")
+  exe <- "C:/ClimateNA_v760/ClimateNA_v7.60.exe"
+  skip_on_cran()
+  skip_if_not(file.exists(exe), "ClimateNA 7.60 is not installed")
+  expect_error(ung_climate(-105.5, 54.1, 500, years = 1700, source = "climatena",
+                           exe = exe), "no climate data")
+  clim <- ung_climate(c(-105.5, -83.7), c(54.1, 49.7), c(500, 240),
+                      id = c("a", "b"), source = "climatena", exe = exe,
+                      quiet = TRUE)
+  expect_named(clim, c("id", "lon", "lat", "elev", "dd0", "map"))
+  expect_equal(clim$id, c("a", "b"))
+  expect_equal(round(clim$dd0), c(2194, 2238))
+  expect_equal(round(clim$map), c(461, 699))
+  # an average of years equals the average of the single-year runs
+  cna <- function(years) {
+    ung_climate(-105.5, 54.1, 500, years = years, source = "climatena",
+                exe = exe, quiet = TRUE)
+  }
+  y1 <- cna(2010)
+  y2 <- cna(2011)
+  y12 <- cna(2010:2011)
+  expect_equal(y12$dd0, (y1$dd0 + y2$dd0) / 2)
+  expect_equal(y12$map, (y1$map + y2$map) / 2)
+  expect_false(isTRUE(all.equal(y1$dd0, clim$dd0[1])))
 })

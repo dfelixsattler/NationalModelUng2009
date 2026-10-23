@@ -10,7 +10,7 @@ ung_climate_from_climatena(x, id = NULL, quiet = FALSE)
 \item{x}{A data.frame of ClimateNA/ClimateBC annual output.}
 
 \item{id}{Optional name of a column in \code{x} that identifies each row (for
-example \code{"id2"} in \code{run_climatena()} output). Defaults to row numbers.}
+example \code{"ID1"} in ClimateNA output). Defaults to row numbers.}
 
 \item{quiet}{Logical. Suppress the one-line message.}
 }
@@ -18,12 +18,11 @@ example \code{"id2"} in \code{run_climatena()} output). Defaults to row numbers.
 A data.frame with columns \code{id}, \code{dd0} and \code{map}, one row per row of \code{x}.
 }
 \description{
-Use this when you have a local copy of ClimateNA or ClimateBC and do not want
-to use \code{climr} (see \code{\link[=ung_climate]{ung_climate()}}). It takes the annual variables from a
-ClimateNA/ClimateBC output table and returns \code{dd0} and \code{map} ready for
-\code{\link[=ung_volume]{ung_volume()}}. It does not run ClimateNA; produce the table first, for
-example with \code{run_climatena()} or \code{run_climatebc()} from the
-GYClimTransferCFS package, or by running the program yourself.
+Use this when you have run ClimateNA or ClimateBC yourself. It takes the
+annual variables from a ClimateNA/ClimateBC output table and returns \code{dd0}
+and \code{map} ready for \code{\link[=ung_volume]{ung_volume()}}. It does not run ClimateNA; to run it
+from R, use \code{ung_climate(source = "climatena")}, which calls this
+function on the result.
 }
 \details{
 The table must contain the annual variables \code{MAP}, \code{DD18}, \code{DD_18} and \code{DD_0}

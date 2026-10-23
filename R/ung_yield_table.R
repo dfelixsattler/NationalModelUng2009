@@ -18,7 +18,8 @@
 #'   `"wide"`: one row per curve, with columns `species`, `dd0`, `map` and one
 #'   column of volume per age, named `vol_0`, `vol_10`, and so on. With
 #'   `uncertainty = TRUE`, the wide table has three rows per curve, told apart
-#'   by the column `statistic` (`"volume"`, `"lower"`, `"upper"`).
+#'   by the column `statistic` (`"volume"`, `"lower"`, `"upper"`). Both
+#'   layouts start with an `id` column when `id` is given.
 #' @param seed Optional integer, used only when `uncertainty = TRUE`. The
 #'   interval comes from random draws, so without a seed `lower` and `upper`
 #'   change slightly each time you run the same call. Give any whole number
@@ -27,11 +28,17 @@
 #' @param ... Passed to [ung_uncertainty()] when `uncertainty = TRUE`, for
 #'   example `n`, `interval`, `sd_dd0`, `sd_map` or `rounding`. Arguments after
 #'   `...` must be named in full.
+#' @param id Optional label for each curve, for example a stand ID: one value
+#'   per element of `species`. The same label can be repeated, for example for
+#'   a stand with two species. When given, it becomes the first column, `id`,
+#'   of the result, so each curve can be matched back to its stand. Default
+#'   `NULL` (no `id` column).
 #'
-#' @details Each species is combined with every age, as in [ung_curve()]. To
-#'   make curves for one species at several sites, repeat the species and give
-#'   one `dd0` and `map` per site:
-#'   `ung_yield_table(rep("black spruce", 2), dd0 = c(1800, 2200), map = c(600, 900))`.
+#' @details Each species is combined with every age, as in [ung_curve()]. For
+#'   several stands, give one value of `species`, `dd0`, `map` and `id` per
+#'   curve. For example, a stand `"A"` with black spruce and a stand `"B"` with
+#'   black spruce and jack pine:
+#'   `ung_yield_table(c("black spruce", "black spruce", "jack pine"), id = c("A", "B", "B"), dd0 = c(1800, 2200, 2200), map = c(600, 900, 900))`.
 #'
 #'   A yield curve is a longer projection than the authors designed the models
 #'   for, and volume is sensitive to climate and to the rounding of the
@@ -57,12 +64,16 @@
 #'                 map = 461, uncertainty = TRUE, seed = 1)
 ung_yield_table <- function(species, age = seq(0, 250, by = 10), dd0 = NULL,
                             map = NULL, model = c("Nat2", "Nat1"), ...,
-                            nat1_bias_correction = FALSE, uncertainty = FALSE,
-                            seed = NULL, format = c("long", "wide"),
-                            warn = TRUE) {
+                            id = NULL, nat1_bias_correction = FALSE,
+                            uncertainty = FALSE, seed = NULL,
+                            format = c("long", "wide"), warn = TRUE) {
   model <- match.arg(model)
   format <- match.arg(format)
   .check_logical(uncertainty, "uncertainty")
+  if (!is.null(id) && (length(id) != length(species) || anyNA(id))) {
+    stop("`id` must be NULL or have one value (not NA) per element of ",
+         "`species`.", call. = FALSE)
+  }
 
   # Predict every species at every age with the chosen model
   curve <- ung_curve(species, age, dd0 = dd0, map = map, model = model,
@@ -70,6 +81,11 @@ ung_yield_table <- function(species, age = seq(0, 250, by = 10), dd0 = NULL,
   out <- data.frame(species = curve$species, dd0 = curve$dd0, map = curve$map,
                     age = curve$age, volume = curve[[paste0("V_", model)]],
                     stringsAsFactors = FALSE)
+  # ung_curve() returns all ages of curve 1, then curve 2, and so on
+  if (!is.null(id)) {
+    out <- data.frame(id = rep(id, each = length(age)), out,
+                      stringsAsFactors = FALSE)
+  }
 
   # Optional uncertainty interval for the same rows
   if (uncertainty) {
@@ -91,7 +107,8 @@ ung_yield_table <- function(species, age = seq(0, 250, by = 10), dd0 = NULL,
 # column per age.
 .yield_wide <- function(long) {
   stats_cols <- intersect(c("volume", "lower", "upper"), names(long))
-  key <- paste(long$species, long$dd0, long$map, sep = "|")
+  id_cols <- intersect(c("id", "species", "dd0", "map"), names(long))
+  key <- do.call(paste, c(long[id_cols], sep = "|"))
   keys <- unique(key)
   first <- match(keys, key)
   ages <- sort(unique(long$age))
@@ -100,7 +117,7 @@ ung_yield_table <- function(species, age = seq(0, 250, by = 10), dd0 = NULL,
     m <- matrix(NA_real_, length(keys), length(ages),
                 dimnames = list(NULL, paste0("vol_", ages)))
     m[cbind(match(key, keys), match(long$age, ages))] <- long[[s]]
-    data.frame(long[first, c("species", "dd0", "map")], curve = seq_along(keys),
+    data.frame(long[first, id_cols, drop = FALSE], curve = seq_along(keys),
                statistic = s, m, check.names = FALSE, stringsAsFactors = FALSE)
   })
   wide <- do.call(rbind, parts)

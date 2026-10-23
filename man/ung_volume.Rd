@@ -114,7 +114,7 @@ reading is that the authors started from maps of long-term average climate
 (built from weather-station records) and then added back the year-to-year
 ups and downs that averaging removes. The paper does not say which years
 were used. Use a long-term average for the stand's location (for example
-1981-2010 normals, which is what \code{\link[=ung_climate]{ung_climate()}} returns) and report which
+1981-2010 normals, which is what \code{\link[=ung_climate]{ung_climate()}} returns by default) and report which
 period you used.
 }
 
@@ -244,7 +244,13 @@ in plain English, and only for problems you can do something about:
 \item the stand is older than any stand used to fit the species' model;
 \item \code{dd0} or \code{map} is outside the climate of the plots used to fit the
 species' model (often a sign that the wrong degree-day variable was used);
-\item predicted volume or basal area is larger than in any fitting plot.
+\item predicted volume or basal area is larger than in any fitting plot;
+\item Nat2 only: at this climate, Nat2 volume reaches half of its maximum before
+age 10 or does not rise with age at all. In Nat2,
+\code{ln(V) = v1 + v2 / age}, and the climate terms in \code{v2} can bring it close
+to zero (or above it) even inside the fitting climate, mainly for
+Douglas-fir, white spruce, subalpine fir, red pine and eastern white pine
+in dry places. Nat1 usually gives a normal rising curve there.
 }
 
 The warning has class \code{ung2009_warning}. Other checks apply to almost every

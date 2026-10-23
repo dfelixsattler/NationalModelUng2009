@@ -2,78 +2,115 @@
 % Please edit documentation in R/ung_climate.R
 \name{ung_climate}
 \alias{ung_climate}
-\title{Look up climate inputs for the Ung et al. (2009) models with climr}
+\title{Get the climate inputs of the models for stand locations}
 \usage{
-ung_climate(lon, lat, elev, id = seq_along(lon), quiet = FALSE)
+ung_climate(
+  lon,
+  lat,
+  elev,
+  id = seq_along(lon),
+  years = NULL,
+  source = c("climr", "climatena"),
+  exe = NULL,
+  quiet = FALSE
+)
 }
 \arguments{
 \item{lon, lat}{Numeric vectors. Longitude and latitude in decimal degrees
-(WGS84; longitude negative in the western hemisphere).}
+(WGS84; longitude negative in the western hemisphere). One location per
+stand.}
 
 \item{elev}{Numeric vector. Elevation in metres above sea level.}
 
-\item{id}{Optional vector of unique identifiers; defaults to row numbers.}
+\item{id}{Optional vector of unique stand identifiers; defaults to row
+numbers.}
+
+\item{years}{\code{NULL} (default) for the 1981-2010 averages, or the years to
+average, such as \code{2010:2019}.}
+
+\item{source}{\code{"climr"} (default) or \code{"climatena"}.}
+
+\item{exe}{For \code{source = "climatena"}: path to the ClimateNA program, for
+example \code{"C:/ClimateNA_v760/ClimateNA_v7.60.exe"}.}
 
 \item{quiet}{Logical. Suppress the one-line message about the data source.}
 }
 \value{
-A data.frame with columns \code{id}, \code{lon}, \code{lat}, \code{elev}, \code{dd0} and \code{map}.
+A data.frame with columns \code{id}, \code{lon}, \code{lat}, \code{elev}, \code{dd0} and
+\code{map}, one row per location.
 }
 \description{
-Retrieves mean annual precipitation (\code{map}, mm) and annual degree-days above
-0 degrees C (\code{dd0}) for point locations from 1981-2010 climate normals using
-the \href{https://github.com/bcgov/climr}{climr} package, so the result can be
-passed straight to \code{\link[=ung_volume]{ung_volume()}}.
+Returns degree-days above 0 degrees C (\code{dd0}) and mean annual precipitation
+(\code{map}, mm) for each stand location, ready for \code{\link[=ung_volume]{ung_volume()}} or
+\code{\link[=ung_yield_table]{ung_yield_table()}}. The values come from either
+\href{https://github.com/bcgov/climr}{climr} (an R package) or a local copy of
+ClimateNA (a Windows program), averaged over 1981-2010 or over the years
+you choose.
 }
 \details{
-\strong{Beware the names.} The models need degree-days \emph{above} 0 degrees C
-(\code{dd0}). climr does not provide that variable. Its \code{DDsub0} (called \code{DD_0}
-in ClimateNA) is degree-days \emph{below} 0 degrees C, a measure of how cold the
-winter is: the opposite quantity. Never pass \code{DDsub0}, \code{DD_0} or \code{DD5} as
-\code{dd0}. See the table in the \emph{Climate inputs} section of \code{\link[=ung_volume]{ung_volume()}}.
+If you already have \code{dd0} and \code{map} from another source, you do not need
+this function: pass your values directly to the model functions. If you ran
+ClimateNA yourself, \code{\link[=ung_climate_from_climatena]{ung_climate_from_climatena()}} converts its output.
 
-\strong{How \code{dd0} is calculated.} climr provides degree-days above 18 degrees C
-(\code{DD18}), below 18 degrees C (\code{DDsub18}) and below 0 degrees C (\code{DDsub0}).
-In words: \code{DD18 - DDsub18} is the yearly total of (daily temperature minus
-18); adding \code{365 * 18} gives the yearly total of daily temperature; adding
-back the below-zero degree-days (\code{DDsub0}) removes the effect of the cold
-days, leaving degree-days above 0 degrees C:
+\strong{Beware the names.} The models need degree-days \emph{above} 0 degrees C
+(\code{dd0}). Neither climr nor ClimateNA provides that variable. Their \code{DDsub0}
+(climr) and \code{DD_0} (ClimateNA) are degree-days \emph{below} 0 degrees C, a
+measure of how cold the winter is: the opposite quantity. Never pass
+\code{DDsub0}, \code{DD_0} or \code{DD5} as \code{dd0}. See the table in the \emph{Climate inputs}
+section of \code{\link[=ung_volume]{ung_volume()}}.
+
+\strong{How \code{dd0} is calculated.} Both programs provide degree-days above 18
+degrees C (\code{DD18}), below 18 degrees C (\code{DDsub18}, ClimateNA \code{DD_18}) and
+below 0 degrees C (\code{DDsub0}, ClimateNA \code{DD_0}). In words: \code{DD18 - DDsub18}
+is the yearly total of (daily temperature minus 18); adding \code{365 * 18}
+gives the yearly total of daily temperature; adding back the below-zero
+degree-days (\code{DDsub0}) removes the effect of the cold days, leaving
+degree-days above 0 degrees C:
 \code{dd0 = (DD18 - DDsub18) + 365 * 18 + DDsub0}.
-This would be exact with daily temperatures. climr, however, estimates each
-degree-day variable from monthly mean temperatures with its own regression
-equation, so the calculated \code{dd0} is an approximation. It has not been
-compared with the degree-days the authors used to fit the models.
+This would be exact with daily temperatures. Both programs, however,
+estimate each degree-day variable from monthly mean temperatures with
+regression equations, so the calculated \code{dd0} is an approximation. It has
+not been compared with the degree-days the authors used to fit the models.
 }
 \section{Differences from the paper's climate}{
 
 Ung et al. (2009) used interpolated long-term climate "to which inter-annual
 variability has been restored" (McKenney et al. 2001; see \emph{Climate inputs}
 in \code{\link[=ung_volume]{ung_volume()}} for what this means). That is not the same product or
-period as the climr 1981-2010 normals. Expect some differences in \code{dd0} and
-\code{map}; because predicted volume can be sensitive to climate (see
-\code{\link[=ung_sensitivity]{ung_sensitivity()}}), they can matter. ClimateNA/ClimateBC output cannot simply be
-substituted: their \code{DD_0} is degree-days below 0 degrees C. Use
-\code{\link[=ung_climate_from_climatena]{ung_climate_from_climatena()}}, which derives \code{dd0} from \code{DD18}, \code{DD_18} and
-\code{DD_0}.
+period as the climr or ClimateNA values. Expect some differences in \code{dd0}
+and \code{map}; because predicted volume can be sensitive to climate (see
+\code{\link[=ung_sensitivity]{ung_sensitivity()}}), they can matter.
 Do not use future-climate projections: the authors state the climate terms
 are descriptive only and not suitable for climate-change impact projection.
 }
 
 \section{Requirements}{
 
-The suggested package \code{climr} must be installed
-(\code{remotes::install_github("bcgov/climr")}). The first call downloads and
-caches climate rasters, which can take several minutes and some hundreds of
-MB; later calls are fast. Coverage is North America.
+\strong{climr:} the suggested package \code{climr} must be installed
+(\code{remotes::install_github("bcgov/climr")}). climr downloads climate maps
+from a database server the first time an area is requested, which can take
+several minutes, and keeps them on your computer; later calls for the same
+area are fast and work offline. Some networks, including some government
+VPNs, block the database server. climr then reports "Could not establish
+connection to database". Disconnect from the VPN, or use ClimateNA.
+
+\strong{ClimateNA:} Windows only. Give the path to the program in \code{exe}; its
+folder must be writable. ClimateNA is run once for the 1981-2010 averages,
+or once per year in \code{years}.
 }
 
 \examples{
 \dontrun{
+# 1981-2010 averages from climr
 clim <- ung_climate(lon = -105.5, lat = 54.1, elev = 500)
 ung_volume("black spruce", age = 80, dd0 = clim$dd0, map = clim$map)
+
+# Average of 2010 to 2019 from ClimateNA
+ung_climate(lon = -105.5, lat = 54.1, elev = 500, years = 2010:2019,
+            source = "climatena",
+            exe = "C:/ClimateNA_v760/ClimateNA_v7.60.exe")
 }
 }
 \seealso{
-\code{\link[=ung_volume]{ung_volume()}}, \code{\link[=ung_climate_from_climatena]{ung_climate_from_climatena()}} for a local
-ClimateNA or ClimateBC installation
+\code{\link[=ung_volume]{ung_volume()}}, \code{\link[=ung_climate_from_climatena]{ung_climate_from_climatena()}}
 }

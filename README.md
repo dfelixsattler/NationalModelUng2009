@@ -66,7 +66,7 @@ A step-by-step worked example is in the vignette:
 | `ung_volume()` | Predicts H, G and V for individual stands, matched row by row (stand 1 with age 1, and so on). |
 | `ung_curve()` | Every species at every age, with both models. Has a `plot()` method. |
 | `ung_sensitivity()` | By how many percent volume changes if `dd0` is off by 100 degree-days or `map` by 100 mm. |
-| `ung_climate()`, `ung_climate_from_climatena()` | Get `dd0` and `map` for a location from climr, or from your own ClimateNA/ClimateBC output. |
+| `ung_climate()`, `ung_climate_from_climatena()` | Get `dd0` and `map` (1981–2010 averages by default) for a location from climr or a local copy of ClimateNA (Windows), or from your own ClimateNA/ClimateBC output. |
 | `ung_species()` | The 25 species, with codes, scientific and common names. |
 
 ## Which model to use
@@ -208,7 +208,9 @@ about:
 * an input is missing;
 * the stand is older than any stand used to fit the model;
 * the climate is outside the range of the fitting plots;
-* predicted volume or basal area is larger than in any fitting plot.
+* predicted volume or basal area is larger than in any fitting plot;
+* Nat2 only (`curve_not_rising`): at this climate, the Nat2 curve reaches half
+  its maximum volume before age 10 or does not rise with age (consider Nat1).
 
 Warnings may also be listed on-demand with
 `ung_check()`. All other cautions previously discussed still apply.

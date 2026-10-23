@@ -99,7 +99,9 @@ spreadsheets and CSV files (kept in the untracked `myfiles/` folder).
   ClimateNA names `DD18` (cooling degree-days above 18 °C), `DD_18` (below 18 °C)
   and `DD_0` (below 0 °C) are used. The user confirmed these variables exist in
   ClimateNA.
-* `ung_climate()` gets climate from `climr` (1981-2010 normals).
+* `ung_climate()` gets climate from `climr` (default) or a local ClimateNA
+  (`source = "climatena"`, Windows): 1981-2010 averages by default, or the
+  average of the years given in `years`.
 * `ung_climate_from_climatena()` converts a local ClimateNA or ClimateBC annual
   table to `dd0` and `map`. A **real run** of ClimateNA v7.60 was made for one
   point (lon -105.5, lat 54.1, elev 500 m): MAP 461, DD18 48, DD_18 6467, DD_0 2043,

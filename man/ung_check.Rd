@@ -33,6 +33,7 @@ to almost every yield curve and would otherwise appear every time.
    \code{older_than_data} \tab the stand is older than any stand used to fit the species' model \tab yes \cr
    \code{climate_outside_data} \tab \code{dd0} or \code{map} is outside the climate of the species' fitting plots \tab yes \cr
    \code{output_beyond_data} \tab predicted volume or basal area is larger than in any fitting plot \tab yes \cr
+   \code{curve_not_rising} \tab at this climate, Nat2 volume reaches half of its maximum before age 10 or does not rise with age; Nat1 may give a more realistic curve \tab yes (Nat2 only) \cr
    \code{young_age} \tab the stand is younger than 10 years or than any fitting plot; predictions are near zero and unreliable \tab no \cr
    \code{long_horizon} \tab one species and climate is predicted over more than 10 years of age (a yield curve); the models were designed for changes over less than 10 years \tab no \cr
    \code{sensitive_to_climate} \tab 100 degree-days or 100 mm more or less changes volume by more than 15 \% (see \code{\link[=ung_sensitivity]{ung_sensitivity()}}) \tab no \cr
@@ -40,7 +41,10 @@ to almost every yield curve and would otherwise appear every time.
 }
 
 
-Age 0 rows are never flagged as young: they are set to 0 by definition.
+Age 0 rows are never flagged as young or as \code{curve_not_rising}: they are
+set to 0 by definition. \code{ung_check()} always calculates both Nat1 and
+Nat2, so it can flag rows for a model you did not use (for example, Nat1
+basal area in \code{output_beyond_data} for a Nat2 yield table).
 The limits of 10 years, 15 \% and 30 \% are rules of thumb chosen for this
 package; they are not from the paper. The fitting-data ranges are in
 \link{ung_envelope}.

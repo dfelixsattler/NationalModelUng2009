@@ -11,6 +11,7 @@ ung_yield_table(
   map = NULL,
   model = c("Nat2", "Nat1"),
   ...,
+  id = NULL,
   nat1_bias_correction = FALSE,
   uncertainty = FALSE,
   seed = NULL,
@@ -37,6 +38,12 @@ predicts average volume directly; see \emph{Which model to use} in
 example \code{n}, \code{interval}, \code{sd_dd0}, \code{sd_map} or \code{rounding}. Arguments after
 \code{...} must be named in full.}
 
+\item{id}{Optional label for each curve, for example a stand ID: one value
+per element of \code{species}. The same label can be repeated, for example for
+a stand with two species. When given, it becomes the first column, \code{id},
+of the result, so each curve can be matched back to its stand. Default
+\code{NULL} (no \code{id} column).}
+
 \item{nat1_bias_correction}{Logical. \code{TRUE} multiplies Nat1 volume by the
 approximate correction described in \emph{Why Nat1 volume needs a correction}. Default
 \code{FALSE} (the published model).}
@@ -57,7 +64,8 @@ columns \code{species}, \code{dd0}, \code{map}, \code{age}, \code{volume} (and \
 \code{"wide"}: one row per curve, with columns \code{species}, \code{dd0}, \code{map} and one
 column of volume per age, named \code{vol_0}, \code{vol_10}, and so on. With
 \code{uncertainty = TRUE}, the wide table has three rows per curve, told apart
-by the column \code{statistic} (\code{"volume"}, \code{"lower"}, \code{"upper"}).}
+by the column \code{statistic} (\code{"volume"}, \code{"lower"}, \code{"upper"}). Both
+layouts start with an \code{id} column when \code{id} is given.}
 
 \item{warn}{Logical. Set to \code{FALSE} to skip the warning and the message about
 default climate.}
@@ -72,10 +80,11 @@ using one model, in the simple layout that yield-table tools such as the
 Carbon Budget Model expect. Ages start at 0 by default, where volume is 0.
 }
 \details{
-Each species is combined with every age, as in \code{\link[=ung_curve]{ung_curve()}}. To
-make curves for one species at several sites, repeat the species and give
-one \code{dd0} and \code{map} per site:
-\code{ung_yield_table(rep("black spruce", 2), dd0 = c(1800, 2200), map = c(600, 900))}.
+Each species is combined with every age, as in \code{\link[=ung_curve]{ung_curve()}}. For
+several stands, give one value of \code{species}, \code{dd0}, \code{map} and \code{id} per
+curve. For example, a stand \code{"A"} with black spruce and a stand \code{"B"} with
+black spruce and jack pine:
+\code{ung_yield_table(c("black spruce", "black spruce", "jack pine"), id = c("A", "B", "B"), dd0 = c(1800, 2200, 2200), map = c(600, 900, 900))}.
 
 A yield curve is a longer projection than the authors designed the models
 for, and volume is sensitive to climate and to the rounding of the
