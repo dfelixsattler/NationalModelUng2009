@@ -22,15 +22,22 @@
 #' rounded* in [ung_volume()]). Set `rounding = FALSE` to see climate
 #' uncertainty alone.
 #'
+#' **Recommendation:** keep `rounding = TRUE`. The rounding uncertainty is
+#' real and cannot be removed, so leaving it out makes the interval look
+#' narrower than it should be. Use `FALSE` only as a diagnostic: run both and
+#' compare to see how much of the interval comes from climate and how much
+#' from rounding.
+#'
 #' @section What the spread means:
-#' * By default the standard deviations are those of `dd0` and `map` among the
-#'   plots used to fit the species' model (`dd0_sd`, `map_sd` in [ung_envelope]). These describe
-#'   **spatial variation among plots**, not year-to-year variation, and not the
-#'   error of any particular climate dataset. They answer "how much would the
-#'   prediction move for a location that differs from this one by a typical
-#'   among-plot climate difference?". If you know the uncertainty of your own
-#'   climate values (for example from a climate-product comparison), pass it as
-#'   `sd_dd0` and `sd_map`.
+#' * By default, `dd0` and `map` vary as much as they do across all the fitting
+#'   plots for that species in Canada (`dd0_sd` and `map_sd` in
+#'   [ung_envelope]), so the interval is wide. If you know how uncertain your
+#'   own climate values are, set `sd_dd0` and `sd_map`.
+#' * `median`, `lower` and `upper` summarise the simulated volumes. Each
+#'   simulated volume is already corrected to the average stand (for Nat2, or
+#'   for Nat1 when `nat1_bias_correction = TRUE`), so `median` is the middle of
+#'   the simulations, not the median stand. `volume` is the prediction at the
+#'   climate you supplied with the published parameters.
 #' * Only **climate uncertainty** and **parameter rounding** are included. The
 #'   statistical uncertainty of the fitted parameters is not: standard errors
 #'   exist for Nat1 only, and without the correlations between parameters they

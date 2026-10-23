@@ -42,7 +42,8 @@ approximate correction described in \emph{Why Nat1 volume needs a correction}. D
 
 \item{uncertainty}{Logical. \code{TRUE} adds \code{lower} and \code{upper} columns: the
 interval from \code{\link[=ung_uncertainty]{ung_uncertainty()}}, which includes climate uncertainty and
-the rounding of the parameters. Default \code{FALSE}.}
+the rounding of the parameters. With the default climate spread this
+interval is wide; see \code{\link[=ung_uncertainty]{ung_uncertainty()}}. Default \code{FALSE}.}
 
 \item{format}{\code{"long"} (default): one row per species, climate and age, with
 columns \code{species}, \code{dd0}, \code{map}, \code{age}, \code{volume} (and \code{lower}, \code{upper}).

@@ -118,16 +118,21 @@ yield_with_interval[
 The `lower` and `upper` columns contain the central 90% interval by default.
 It includes uncertainty in the climate values and uncertainty caused by
 rounding the published parameters. The parameters were published to four
-decimal places, and the unrounded values are not available.
+decimal places, and the unrounded values are not available. Keep the default
+`rounding = TRUE`; set it to `FALSE` only to see how much of the interval
+comes from climate alone.
 
 This interval does **not** include the statistical uncertainty of the fitted
 parameters (standard errors exist for Nat1 only, without the correlations
-needed to combine them) or plot-to-plot variation. The default climate spread
-describes differences among fitting plots. If the uncertainty of your own
-climate source is known, pass it with `sd_dd0` and `sd_map`.
+needed to combine them) or the stand-to-stand variation around the model, so
+real stands vary more than the interval shows. By default, `dd0` and `map`
+vary as much as they do across all the fitting plots for that species in
+Canada, so the interval is wide. If you know how uncertain your own climate
+values are, set `sd_dd0` and `sd_map`.
 
 For a curve-shaped uncertainty plot, use `ung_uncertainty()` directly. Its
-shaded band is the interval, and its line is the simulated median.
+shaded band is the interval, and its line is the median of the simulations
+(the middle of the simulated volumes, not the median stand).
 
 ```{r uncertainty-plot}
 fan <- ung_uncertainty(
@@ -170,9 +175,10 @@ supplying the climate for the area is usually clearer.
 
 ## 5. Compare Nat1 and Nat2
 
-Nat2 is recommended when the required output is volume. Nat1 first predicts
-dominant height and basal area `G`, then calculates volume from those
-predictions. Nat2 predicts volume directly.
+The choice of model is left to the user. Nat2 is the default of
+`ung_yield_table()` because it predicts average volume directly. Nat1 first
+predicts dominant height and basal area `G`, then calculates volume from those
+predictions.
 
 Use `ung_curve(..., model = "both")` for a short comparison. The default
 Nat1 result is the published, uncorrected Nat1 model.
@@ -187,9 +193,10 @@ plot(comparison)
 ```
 
 Uncorrected Nat1 is biased low. At age 80, across species at their average
-climates, its median volume is about 20% below Nat2. This is because predicted
-height and `G` carry more variation into Nat1 than its published volume
-correction accounts for.
+climates, Nat2 volume is a median of about 20% higher than Nat1. This is
+because predicted height and `G` carry more variation into Nat1 than its
+published volume correction accounts for (see "Why Nat1 volume needs a
+correction" in `?ung_volume`).
 
 The optional `nat1_bias_correction = TRUE` applies a second-order Taylor-series
 correction to Nat1 volume. It closes most of the gap with Nat2; it was added by

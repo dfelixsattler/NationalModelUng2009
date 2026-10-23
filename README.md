@@ -71,13 +71,13 @@ A step-by-step worked example is in the vignette:
 
 ## Which model to use
 
-**User discretion required**: Nat2 is the default of `ung_yield_table()`) as it predicts average volume
+**User discretion required**: Nat2 is the default of `ung_yield_table()` as it predicts average volume
 directly.
 
 Nat1 predicts H and G first and then puts these predictions into its volume
 equation. The scripts of the current package use the published equations and parameters. As such, Nat1 volume is **biased low**: across the 25 species,
 at age 80 and each species' average climate, Nat2 is a median of about
-**20 % higher** than Nat1 (see next section). For this reason, Nat1 is has been made available with an optional 
+**20 % higher** than Nat1 (see next section). For this reason, Nat1 has been made available with an optional 
 bias correction.
 
 ### Why Nat1 volume includes a correction
@@ -96,7 +96,7 @@ bias correction.
    source (i.e., the scatter of the volume equation itself). The errors carried over from predicted H and G, mostly from G, are
    not accounted for. This is why uncorrected Nat1 volume is biased low.
 5. Nat2 has a single equation from age and climate straight to volume. Its
- residual already contains all the scatter, so its Dua factor (`CDv2`, 1.15 for
+   residual already contains all the scatter, so its Duan factor (`CDv2`, 1.15 for
    black spruce) accounts for everything and needs no correction.
 6. For Nat1, the missing scatter can be estimated (given some assumptions). Each Duan factor gives the
    variance of its log errors, about `2 * ln(CD)`. The extra variance that H
@@ -113,12 +113,12 @@ scatter. It ranges from 1.05 to 1.46 depending on the species (1.29 for black
 spruce). With the correction applied, the median gap between Nat2 and Nat1 falls from about 20 % to
 under 1 %.
 
-This matters for the Carbon Budget Model and similar tools. Normally, a chosen yield curve is used to represent every hectare of a particular stand type (i.e. stratum), and one multiplies the yields by total area to get total volume for that particular stand type. That calculation needs the average volume per hectare, not the volume per hectare of the median stand.  The correction for Nat1  was added as an option in this package as it was not part of the published model.
+This matters for the Carbon Budget Model and similar tools. Normally, a chosen yield curve is used to represent every hectare of a particular stand type (i.e. stratum), and one multiplies the yields by total area to get total volume for that particular stand type. That calculation needs the average volume per hectare, not the volume per hectare of the median stand. The correction for Nat1 was added as an option (off by default) in this package; it was not part of the published model.
 
 
 ## A Note on Parameters
 
-The paper and the files that were supplied to create this package  give the model parameters to
+The paper and the files that were supplied to create this package give the model parameters to
 only **4 decimal places** (a few large values to 4 significant digits).
 
 This rounding is not harmless. Some parameters are tiny and are multiplied by
@@ -128,32 +128,32 @@ anywhere between 0.00005 and 0.00015. Moving every parameter at random within
 its rounding interval changes predicted volume. As an example, at age 80 and using each species'
 average climate, changes are around:
 
-* **9 %** for Nat1 (standard deviation; from 3 % to 16 % depending on the species);
+* **9 %** for Nat1 (standard deviation; from 4 % to 16 % depending on the species);
 * **4 %** for Nat2 (at most 9 %).
 
 This uncertainty comes on top of the other uncertainties. Users of the package must simply be aware of this. It is baked-in to the `ung_uncertainty()` and
 `ung_yield_table(uncertainty = TRUE)` functions.
 
+
+
 ## Uncertainty
 
-Users of the package should include uncertainty as part of their workflow. This is possible though `ung_uncertainty()` and
-`ung_yield_table(uncertainty = TRUE). These functions repeat the prediction many times
+Users of the package should include uncertainty as part of their workflow. This is possible through `ung_uncertainty()` and
+`ung_yield_table(uncertainty = TRUE)`. These functions repeat the prediction many times
 (Monte Carlo simulation), each time with:
 
-* slightly different climate: `dd0` and `map` are drawn from a normal
-  distribution around the values supplied. By default the spread is the variation of
-  `dd0` and `map` among the plots used to fit that species' model. This is
-  variation between places, not between years, and not the error of a climate
-  dataset. If you know the uncertainty of your own climate values, give it with
-  `sd_dd0` and `sd_map`;
+* slightly different climate. By default, `dd0` and `map` vary as much as they
+  do across all the fitting plots for that species in Canada, so the interval
+  is wide. If you know how uncertain your own climate values are, set `sd_dd0`
+  and `sd_map`;
 * slightly different parameters, within their rounding interval (see above).
   Use `rounding = FALSE` to leave this out.
 
-The result is the median and a central interval (90 % by default) of the
-predictions. It does **not** include the statistical uncertainty of the fitted
-parameters. Data provided to create this package only included standard errors  for Nat1, without the correlations needed
-to combine them or the plot-to-plot variation around the model. Real stands of
-the same age and climate will vary more than the interval shows.
+**Recommendation:** use `rounding = TRUE`. The rounding uncertainty is real and can't be removed, so leaving it out makes the interval look narrower than it should be. Use `FALSE` only as a diagnostic: run both and compare to see how much of the interval comes from climate and how much from rounding.
+
+The result is a central interval (90 % by default) of the simulated volumes, and, in `ung_uncertainty()`, their median. Each simulated volume is already corrected to the average stand, so this "median" is the middle of the simulations, not the median stand (for Nat2 or for Nat1 when `nat1_bias_correction = TRUE`). The `volume` column is the prediction at the climate you supplied with the published parameters.
+
+The interval does not include the statistical uncertainty of the fitted parameters (standard errors were provided only for Nat1, without the correlations needed to combine them), nor the stand-to-stand variation around the model. Real stands of the same age and climate will vary more than the interval shows.
 
 ## Climate inputs
 
@@ -169,11 +169,11 @@ the same age and climate will vary more than the interval shows.
   approximation and has not yet been checked against the climate the authors
   used.
 * `map` is the yearly precipitation in **mm**.
-* The models use climate, but are not climate-sensitive. For the two climate variables, users supply  **one  value of each per stand**. Those same values are used at every age. The models were
+* The models use climate, but that climate is held fixed across all ages. For the two climate variables, users supply **one value of each per stand**. Those same values are used at every age. The models were
   fitted with one `dd0` and one `map` per plot, describing the long-term climate
   of the location, not the weather of a particular year.
 * The authors used interpolated climate normals "to which inter-annual
-  variability has been restored" (McKenney et al. 2001). This is interpreted as meaning that the authors  started from maps of long-term average
+  variability has been restored" (McKenney et al. 2001). This is interpreted as meaning that the authors started from maps of long-term average
   climate (built from weather-station records) and then added back the
   year-to-year ups and downs that averaging removes. The averaging period is not
   stated. Thus, it is recommended that users apply values that describe the location over several decades (for
@@ -187,12 +187,12 @@ the same age and climate will vary more than the interval shows.
 
 ## Age 0
 
-Starting yield curves from Age 0 is allowed and gives 0 for H, G and V. However, note that stand ages below around 10 years were not  used in fitting the models and, therefore, may not be reliable (see `ung_check()`).
+Starting yield curves from Age 0 is allowed and gives 0 for H, G and V. However, note that very young stands are poorly represented in the fitting data (see `ung_check()`, which flags volumes that are generated for ages younger than the youngest stands used in fitting for that species and for ages under 10 years for all species).
 
 ## Limitations (from the paper)
 
 * The authors state: "the models developed here were designed for increment
-  predictions over very short (< 10 years) intervals.
+  predictions over very short (< 10 years) intervals".
 * The models were fitted to plots measured once and dominated by one species
   (at least 75 % of basal area). For mixed stands, apply the model to each
   species.
@@ -211,7 +211,7 @@ about:
 * predicted volume or basal area is larger than in any fitting plot.
 
 Warnings may also be listed on-demand with
-`ung_check()`. All other cautions perviously discussed still apply.
+`ung_check()`. All other cautions previously discussed still apply.
 
 
 ## Licence

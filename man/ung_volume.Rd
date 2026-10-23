@@ -72,11 +72,12 @@ species with every age.
 }
 \section{Which model to use}{
 
-For a single volume curve, for example for the Carbon Budget Model, use
-\strong{Nat2} (the default of \code{\link[=ung_yield_table]{ung_yield_table()}}). It predicts average volume
-directly with its own correction factor, and its parameters are less affected
-by rounding (see \emph{Parameters are rounded}). Use \strong{Nat1} when you also need
-height and basal area, and read \emph{Why Nat1 volume needs a correction}.
+The choice is left to the user. \strong{Nat2} is the default of
+\code{\link[=ung_yield_table]{ung_yield_table()}} because it predicts average volume directly, and its
+parameters are less affected by rounding (see \emph{Parameters are rounded}).
+\strong{Nat1} also gives height and basal area, but its published volume is
+biased low (Nat2 is a median of about 20 \% higher). For this reason Nat1
+has an optional bias correction; read \emph{Why Nat1 volume needs a correction}.
 }
 
 \section{Climate inputs}{
@@ -183,12 +184,16 @@ equation's own scatter. It ranges from about 1.05 to 1.46 among species
 climate, Nat2 volume is a median of about 20 \% higher than uncorrected Nat1
 volume. With the correction, the median gap shrinks to under 1 \%.
 
-\strong{Why it matters.} Tools such as the Carbon Budget Model add volume (and
-carbon) over many stands, so they need the average stand, not the median.
+\strong{Why it matters.} In the Carbon Budget Model and similar tools, a chosen
+yield curve usually represents every hectare of a particular stand type
+(stratum), and its yields are multiplied by the total area to get the total
+volume of that stand type. That calculation needs the average volume per
+hectare, not the volume per hectare of the median stand.
 
-\strong{Why it is off by default.} The correction was added by the package author
-and is not part of the published model, and it rests on the assumptions
-above. Nat2, the recommended model, does not need it. Height (\code{H_Nat1}) and
+\strong{Why it is off by default.} The correction was added as an option in this
+package; it is not part of the published model, and it rests on the
+assumptions above. Nat2 does not need it. Height (\code{H_Nat1}) and basal area
+(\code{G_Nat1}) are not changed by it. Height (\code{H_Nat1}) and
 basal area (\code{G_Nat1}) are not changed by it.
 }
 
@@ -202,7 +207,7 @@ climate values: \code{h11 = 0.0001} times \code{dd0 = 2000} adds 0.2 to \code{ln
 but the true \code{h11} could be anywhere from 0.00005 to 0.00015. When every
 coefficient is moved at random within its rounding interval, predicted
 volume at age 80 and each species' average climate varies by about 9 \%
-(standard deviation) for Nat1, from 3 \% to 16 \% depending on the species
+(standard deviation) for Nat1, from 4 \% to 16 \% depending on the species
 (tamarack is the worst), and by about 4 \% for Nat2 (at most 9 \%). This is
 in addition to every other source of uncertainty. \code{\link[=ung_uncertainty]{ung_uncertainty()}}
 includes it by default (\code{rounding = TRUE}).
@@ -213,7 +218,9 @@ includes it by default (\code{rounding = TRUE}).
 Age 0 is allowed and gives 0 for height, basal area and volume, which is
 what the Carbon Budget Model expects at the start of a curve. The equations
 themselves divide by age, so they cannot be evaluated at exactly 0; for
-normal climates they approach 0 as age approaches 0.
+normal climates they approach 0 as age approaches 0. Very young stands are
+poorly represented in the fitting data: \code{\link[=ung_check]{ung_check()}} flags ages under 10
+years, and ages younger than the youngest fitting plot of that species.
 }
 
 \section{Intended use and time horizon}{

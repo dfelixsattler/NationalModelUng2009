@@ -92,19 +92,26 @@ resulting spread is the volume uncertainty caused by rounding alone. It is
 typically a few percent for Nat2 and larger for Nat1 (see \emph{Parameters are
 rounded} in \code{\link[=ung_volume]{ung_volume()}}). Set \code{rounding = FALSE} to see climate
 uncertainty alone.
+
+\strong{Recommendation:} keep \code{rounding = TRUE}. The rounding uncertainty is
+real and cannot be removed, so leaving it out makes the interval look
+narrower than it should be. Use \code{FALSE} only as a diagnostic: run both and
+compare to see how much of the interval comes from climate and how much
+from rounding.
 }
 
 \section{What the spread means}{
 
 \itemize{
-\item By default the standard deviations are those of \code{dd0} and \code{map} among the
-plots used to fit the species' model (\code{dd0_sd}, \code{map_sd} in \link{ung_envelope}). These describe
-\strong{spatial variation among plots}, not year-to-year variation, and not the
-error of any particular climate dataset. They answer "how much would the
-prediction move for a location that differs from this one by a typical
-among-plot climate difference?". If you know the uncertainty of your own
-climate values (for example from a climate-product comparison), pass it as
-\code{sd_dd0} and \code{sd_map}.
+\item By default, \code{dd0} and \code{map} vary as much as they do across all the fitting
+plots for that species in Canada (\code{dd0_sd} and \code{map_sd} in
+\link{ung_envelope}), so the interval is wide. If you know how uncertain your
+own climate values are, set \code{sd_dd0} and \code{sd_map}.
+\item \code{median}, \code{lower} and \code{upper} summarise the simulated volumes. Each
+simulated volume is already corrected to the average stand (for Nat2, or
+for Nat1 when \code{nat1_bias_correction = TRUE}), so \code{median} is the middle of
+the simulations, not the median stand. \code{volume} is the prediction at the
+climate you supplied with the published parameters.
 \item Only \strong{climate uncertainty} and \strong{parameter rounding} are included. The
 statistical uncertainty of the fitted parameters is not: standard errors
 exist for Nat1 only, and without the correlations between parameters they

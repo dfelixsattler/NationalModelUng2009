@@ -11,7 +11,8 @@
 #'   [ung_volume()].
 #' @param uncertainty Logical. `TRUE` adds `lower` and `upper` columns: the
 #'   interval from [ung_uncertainty()], which includes climate uncertainty and
-#'   the rounding of the parameters. Default `FALSE`.
+#'   the rounding of the parameters. With the default climate spread this
+#'   interval is wide; see [ung_uncertainty()]. Default `FALSE`.
 #' @param format `"long"` (default): one row per species, climate and age, with
 #'   columns `species`, `dd0`, `map`, `age`, `volume` (and `lower`, `upper`).
 #'   `"wide"`: one row per curve, with columns `species`, `dd0`, `map` and one
