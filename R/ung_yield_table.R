@@ -14,11 +14,14 @@
 #' independently) around your values. At each age, `lower` and `upper` hold
 #' the middle 90 % of the 1000 volumes. The `volume` column is unchanged.
 #'
-#' **What you must supply.** `sd_dd0` and `sd_map`, the standard deviations
-#' of your `dd0` (degree-days) and `map` (mm). climr and ClimateNA (and so
-#' [ung_climate()]) give one value per location, with no standard deviation.
-#' Other climate tools, such as BioSIM, can simulate many replicates of the
-#' climate at a location; use the standard deviation across these replicates.
+#' **What you must supply.** `sd_dd0` (degree-days) and `sd_map` (mm): how
+#' uncertain the stand's long-term (normal) `dd0` and `map` are. Do not use
+#' the year-to-year standard deviation: the model uses long-term climate, so
+#' year-to-year variation would make the interval too wide. climr and
+#' ClimateNA (and so [ung_climate()]) give one value per location, with no
+#' standard deviation. Other climate tools, such as BioSIM, can simulate many
+#' replicates of the climate at a location: average each replicate over many
+#' years, then use the standard deviation of these averages.
 #'
 #' **What you do not get.** The interval covers climate only. It does not
 #' include error in the fitted parameters, stand-to-stand variation (real

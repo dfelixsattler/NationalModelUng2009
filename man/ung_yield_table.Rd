@@ -107,11 +107,14 @@ time drawing \code{dd0} and \code{map} at random (normal distribution, drawn
 independently) around your values. At each age, \code{lower} and \code{upper} hold
 the middle 90 \% of the 1000 volumes. The \code{volume} column is unchanged.
 
-\strong{What you must supply.} \code{sd_dd0} and \code{sd_map}, the standard deviations
-of your \code{dd0} (degree-days) and \code{map} (mm). climr and ClimateNA (and so
-\code{\link[=ung_climate]{ung_climate()}}) give one value per location, with no standard deviation.
-Other climate tools, such as BioSIM, can simulate many replicates of the
-climate at a location; use the standard deviation across these replicates.
+\strong{What you must supply.} \code{sd_dd0} (degree-days) and \code{sd_map} (mm): how
+uncertain the stand's long-term (normal) \code{dd0} and \code{map} are. Do not use
+the year-to-year standard deviation: the model uses long-term climate, so
+year-to-year variation would make the interval too wide. climr and
+ClimateNA (and so \code{\link[=ung_climate]{ung_climate()}}) give one value per location, with no
+standard deviation. Other climate tools, such as BioSIM, can simulate many
+replicates of the climate at a location: average each replicate over many
+years, then use the standard deviation of these averages.
 
 \strong{What you do not get.} The interval covers climate only. It does not
 include error in the fitted parameters, stand-to-stand variation (real
