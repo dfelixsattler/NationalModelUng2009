@@ -14,7 +14,7 @@ A data.frame with 25 rows and 26 columns:
 \item{v30, v31, v32}{Nat1 volume parameters: intercept, and the
 coefficients of ln(H) and ln(G).}
 \item{CDh, CDg, CDv}{Nat1 Duan correction factors (see \emph{Duan correction
-factor} in \code{\link[=ung_volume]{ung_volume()}}).}
+factor} in \link{ung_models}).}
 \item{v10-v22}{Nat2 volume parameters, same structure as \code{h}.}
 \item{CDv2}{Nat2 Duan correction factor.}
 }
@@ -42,7 +42,7 @@ own; they are \strong{not} used here.
 \strong{Rounding.} All parameters were published with only 4 decimal places (a few
 large values with 4 significant digits), and the unrounded estimates are not
 available. This rounding alone makes predicted volume uncertain by a few
-percent; see \emph{Parameters are rounded} in \code{\link[=ung_volume]{ung_volume()}} and
+percent; see \emph{Parameters are rounded} in \link{ung_models} and
 the uncertainty interval of \code{\link[=ung_yield_table]{ung_yield_table()}}.
 }
 \keyword{datasets}

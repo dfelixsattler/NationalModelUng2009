@@ -87,7 +87,6 @@ test_that("fitting-data envelope is per species and internally consistent", {
 
 test_that("ung_curve combines every species with every age", {
   d <- .ung_curve(c("black spruce", "Douglas-fir"), age = 10:80, warn = FALSE)
-  expect_s3_class(d, "ung_volume")
   expect_equal(nrow(d), 2 * 71)
   expect_equal(unique(d$species), c("PICE.MAR", "PSEU.MEN"))
   # species mean climate, different for each species
@@ -98,7 +97,6 @@ test_that("ung_curve combines every species with every age", {
   # ung_volume matches row by row and the error points to ung_yield_table()
   expect_error(ung_volume(c("black spruce", "Douglas-fir"), age = 10:80),
                "ung_yield_table")
-  expect_silent(plot(d))
 })
 
 test_that("ung_volume gives at most one warning, naming only actionable problems", {
@@ -150,15 +148,17 @@ test_that("sensitivity table has the documented structure and values", {
   expect_true(is.na(.ung_sensitivity("POPU.TRE", 1, 2200, 750, model = "Nat2")$max_change_pct))
 })
 
-test_that("plot method runs for one and several curves", {
-  d <- ung_volume(rep(c("PICE.MAR", "PINU.BAN"), 3), rep(c(20, 60, 100), each = 2),
-                  2100, 800, warn = FALSE)
-  pdf(NULL)
-  on.exit(dev.off())
-  expect_no_error(plot(d))
-  expect_error(plot(ung_volume("PICE.MAR", 50, 2000, 800, model = "Nat2", warn = FALSE), what = "H"),
-               "no H predictions")
-  expect_no_error(plot(.ung_curve("PICE.MAR", 0:100, 2000, 800, warn = FALSE), what = "G"))
+test_that("include_hg adds Nat1 height and basal area to the yield table", {
+  tab <- ung_yield_table("PICE.MAR", age = c(0, 80), dd0 = 2079, map = 965,
+                         model = "Nat1", include_hg = TRUE, warn = FALSE)
+  ref <- ung_volume("PICE.MAR", c(0, 80), 2079, 965, model = "Nat1", warn = FALSE)
+  expect_equal(names(tab), c("species", "model", "dd0", "map", "age", "H", "G", "volume"))
+  expect_equal(tab$H, ref$H_Nat1)
+  expect_equal(tab$G, ref$G_Nat1)
+  expect_equal(tab$volume, ref$V_Nat1)
+  expect_error(ung_yield_table("PICE.MAR", include_hg = TRUE), "Nat1")
+  expect_error(ung_yield_table("PICE.MAR", model = "Nat1", include_hg = TRUE,
+                               format = "wide"), "long")
 })
 
 test_that("ung_yield_table gives a simple long or wide table, Nat2 by default", {

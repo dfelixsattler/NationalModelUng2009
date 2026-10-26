@@ -10,7 +10,7 @@ ung_climate(
   elev,
   id = seq_along(lon),
   years = NULL,
-  source = c("climr", "climatena"),
+  source = "climr",
   exe = NULL,
   quiet = FALSE
 )
@@ -41,9 +41,8 @@ A data.frame with columns \code{id}, \code{lon}, \code{lat}, \code{elev}, \code{
 }
 \description{
 Returns degree-days above 0 degrees C (\code{dd0}) and mean annual precipitation
-(\code{map}, mm) for each stand location, ready for \code{\link[=ung_volume]{ung_volume()}} or
-\code{\link[=ung_yield_table]{ung_yield_table()}}. The values come from either
-\href{https://github.com/bcgov/climr}{climr} (an R package) or a local copy of
+(\code{map}, mm) for each stand location, ready for \code{\link[=ung_yield_table]{ung_yield_table()}}. The
+values come from either \href{https://github.com/bcgov/climr}{climr} (an R package) or a local copy of
 ClimateNA (a Windows program), averaged over 1981-2010 or over the years
 you choose.
 }
@@ -57,7 +56,7 @@ ClimateNA yourself, \code{\link[=ung_climate_from_climatena]{ung_climate_from_cl
 (climr) and \code{DD_0} (ClimateNA) are degree-days \emph{below} 0 degrees C, a
 measure of how cold the winter is: the opposite quantity. Never pass
 \code{DDsub0}, \code{DD_0} or \code{DD5} as \code{dd0}. See the table in the \emph{Climate inputs}
-section of \code{\link[=ung_volume]{ung_volume()}}.
+section of \link{ung_models}.
 
 \strong{How \code{dd0} is calculated.} Both programs provide degree-days above 18
 degrees C (\code{DD18}), below 18 degrees C (\code{DDsub18}, ClimateNA \code{DD_18}) and
@@ -76,7 +75,7 @@ not been compared with the degree-days the authors used to fit the models.
 
 Ung et al. (2009) used interpolated long-term climate "to which inter-annual
 variability has been restored" (McKenney et al. 2001; see \emph{Climate inputs}
-in \code{\link[=ung_volume]{ung_volume()}} for what this means). That is not the same product or
+in \link{ung_models} for what this means). That is not the same product or
 period as the climr or ClimateNA values. Expect some differences in \code{dd0}
 and \code{map}; because predicted volume can be sensitive to climate (see
 \code{\link[=ung_check]{ung_check()}}), they can matter.
@@ -103,7 +102,7 @@ or once per year in \code{years}.
 \dontrun{
 # 1981-2010 averages from climr
 clim <- ung_climate(lon = -105.5, lat = 54.1, elev = 500)
-ung_volume("black spruce", age = 80, dd0 = clim$dd0, map = clim$map)
+ung_yield_table("black spruce", dd0 = clim$dd0, map = clim$map)
 
 # Average of 2010 to 2019 from ClimateNA
 ung_climate(lon = -105.5, lat = 54.1, elev = 500, years = 2010:2019,
@@ -112,5 +111,5 @@ ung_climate(lon = -105.5, lat = 54.1, elev = 500, years = 2010:2019,
 }
 }
 \seealso{
-\code{\link[=ung_volume]{ung_volume()}}, \code{\link[=ung_climate_from_climatena]{ung_climate_from_climatena()}}
+\code{\link[=ung_yield_table]{ung_yield_table()}}, \code{\link[=ung_climate_from_climatena]{ung_climate_from_climatena()}}
 }

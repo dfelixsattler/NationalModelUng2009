@@ -121,7 +121,7 @@ The result is in long format: one row per curve and age, with columns `id`,
 `species` (the package code, such as `PINU.BAN` for jack pine), `model`, `dd0`,
 `map`, `age` and `volume`. Age 0 always has volume 0.
 
-The default model is Nat2 (see "Which model to use" in `?ung_volume`).
+The default model is Nat2 (see "Which model to use" in `?ung_models`).
 
 The warning above is a single summary for the whole call. Here it says that
 some curves go beyond the oldest stands in the data used to fit the models.
@@ -210,7 +210,7 @@ plot(yield[yield$species == "PICE.MAR", ])
 Nat2 predicts volume directly. Nat1 first predicts dominant height and basal
 area `G`, then calculates volume from them. The published Nat1 is biased low;
 `nat1_bias_correction = TRUE` adds a correction that closes most of the gap
-(see "Why Nat1 volume needs a correction" in `?ung_volume`). The correction
+(see "Why Nat1 volume needs a correction" in `?ung_models`). The correction
 was added by this package and is not part of the published model.
 
 ```{r compare-models}

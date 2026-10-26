@@ -1,7 +1,7 @@
 #' Check predictions for extrapolation and other cautions
 #'
 #' Runs every check the package knows about on a set of predictions and
-#' explains, in plain English, how many rows each one affects. [ung_volume()]
+#' explains, in plain English, how many rows each one affects. [ung_yield_table()]
 #' only warns about the checks marked *warns* below, because the others apply
 #' to almost every yield curve and would otherwise appear every time.
 #'
@@ -26,7 +26,7 @@
 #' [ung_envelope].
 #'
 #' @param x A data.frame with columns `species`, `age`, `dd0` and `map`, such
-#'   as the result of [ung_volume()] or [ung_yield_table()] (long format).
+#'   as the result of [ung_yield_table()] (long format).
 #' @param rows Logical. `FALSE` (default) returns one line per check. `TRUE`
 #'   returns one line per row of `x`, with a `TRUE`/`FALSE` column per check.
 #'
@@ -34,11 +34,11 @@
 #'   `rows_flagged`, `rows_total` and `meaning`. With `rows = TRUE`, the
 #'   `species`, `age`, `dd0` and `map` of `x` followed by one logical column per
 #'   check.
-#' @seealso [ung_volume()], [ung_yield_table()]
+#' @seealso [ung_models], [ung_yield_table()]
 #' @export
 #' @examples
-#' curve <- ung_volume("jack pine", age = seq(0, 200, by = 10),
-#'                     dd0 = 2200, map = 800)
+#' curve <- ung_yield_table("jack pine", age = seq(0, 200, by = 10),
+#'                          dd0 = 2200, map = 800, warn = FALSE)
 #' ung_check(curve)
 #'
 #' # Which ages are affected?
@@ -48,8 +48,8 @@ ung_check <- function(x, rows = FALSE) {
   .check_logical(rows, "rows")
   if (!is.data.frame(x) || !all(c("species", "age", "dd0", "map") %in% names(x))) {
     stop("`x` must be a data.frame with columns `species`, `age`, `dd0` and ",
-         "`map`, such as the result of ung_volume(). For ung_yield_table(), ",
-         "use format = \"long\".", call. = FALSE)
+         "`map`, such as a yield table from ung_yield_table() made with ",
+         "format = \"long\".", call. = FALSE)
   }
   correction <- isTRUE(attr(x, "nat1_bias_correction"))
   pred <- ung_volume(x$species, x$age, x$dd0, x$map, model = "both",
@@ -109,7 +109,7 @@ ung_check <- function(x, rows = FALSE) {
     "Nat1 and Nat2 volumes differ by more than ", .model_gap * 100, " %.")
 )
 
-# One TRUE/FALSE vector per check for a prediction from ung_volume().
+# One TRUE/FALSE vector per check for a prediction from ung_volume() (internal).
 # The sensitivity check re-runs the model, so it is skipped when not needed.
 .flag_rows <- function(out, sensitivity = TRUE) {
   env <- .envelope_for(out$species)

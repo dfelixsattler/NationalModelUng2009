@@ -13,7 +13,7 @@ A data.frame with columns \code{code}, \code{scientific} and \code{common}.
 Returns the 25 species for which Ung et al. (2009) published parameters,
 with the code used internally by the models, the scientific name and the
 common name. Any of the three can be used as the \code{species} argument of
-\code{\link[=ung_volume]{ung_volume()}}.
+\code{\link[=ung_yield_table]{ung_yield_table()}}.
 }
 \examples{
 ung_species()

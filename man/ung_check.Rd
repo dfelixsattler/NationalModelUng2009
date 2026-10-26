@@ -8,7 +8,7 @@ ung_check(x, rows = FALSE)
 }
 \arguments{
 \item{x}{A data.frame with columns \code{species}, \code{age}, \code{dd0} and \code{map}, such
-as the result of \code{\link[=ung_volume]{ung_volume()}} or \code{\link[=ung_yield_table]{ung_yield_table()}} (long format).}
+as the result of \code{\link[=ung_yield_table]{ung_yield_table()}} (long format).}
 
 \item{rows}{Logical. \code{FALSE} (default) returns one line per check. \code{TRUE}
 returns one line per row of \code{x}, with a \code{TRUE}/\code{FALSE} column per check.}
@@ -21,7 +21,7 @@ check.
 }
 \description{
 Runs every check the package knows about on a set of predictions and
-explains, in plain English, how many rows each one affects. \code{\link[=ung_volume]{ung_volume()}}
+explains, in plain English, how many rows each one affects. \code{\link[=ung_yield_table]{ung_yield_table()}}
 only warns about the checks marked \emph{warns} below, because the others apply
 to almost every yield curve and would otherwise appear every time.
 }
@@ -49,8 +49,8 @@ package; they are not from the paper. The fitting-data ranges are in
 \link{ung_envelope}.
 }
 \examples{
-curve <- ung_volume("jack pine", age = seq(0, 200, by = 10),
-                    dd0 = 2200, map = 800)
+curve <- ung_yield_table("jack pine", age = seq(0, 200, by = 10),
+                         dd0 = 2200, map = 800, warn = FALSE)
 ung_check(curve)
 
 # Which ages are affected?
@@ -58,5 +58,5 @@ flags <- ung_check(curve, rows = TRUE)
 flags$age[flags$sensitive_to_climate]
 }
 \seealso{
-\code{\link[=ung_volume]{ung_volume()}}, \code{\link[=ung_yield_table]{ung_yield_table()}}
+\link{ung_models}, \code{\link[=ung_yield_table]{ung_yield_table()}}
 }

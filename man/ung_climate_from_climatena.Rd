@@ -20,7 +20,7 @@ A data.frame with columns \code{id}, \code{dd0} and \code{map}, one row per row 
 \description{
 Use this when you have run ClimateNA or ClimateBC yourself. It takes the
 annual variables from a ClimateNA/ClimateBC output table and returns \code{dd0}
-and \code{map} ready for \code{\link[=ung_volume]{ung_volume()}}. It does not run ClimateNA; to run it
+and \code{map} ready for \code{\link[=ung_yield_table]{ung_yield_table()}}. It does not run ClimateNA; to run it
 from R, use \code{ung_climate(source = "climatena")}, which calls this
 function on the result.
 }
@@ -51,7 +51,7 @@ climate used to fit the models.
 Request a climate \strong{normal} (for example \code{Normal_1981_2010.nrm}) so that the
 values describe the location over several decades. A single year
 (\code{Year_2020.ann}) gives that one year's weather, which is not what the
-models were fitted to; see the \emph{Climate inputs} section of \code{\link[=ung_volume]{ung_volume()}}.
+models were fitted to; see the \emph{Climate inputs} section of \link{ung_models}.
 This function does not check which period the table holds.
 }
 
@@ -61,5 +61,5 @@ x <- data.frame(id2 = "stand1", MAP = 461, DD18 = 48, DD_18 = 6467, DD_0 = 2043)
 ung_climate_from_climatena(x, id = "id2")
 }
 \seealso{
-\code{\link[=ung_climate]{ung_climate()}}, \code{\link[=ung_volume]{ung_volume()}}
+\code{\link[=ung_climate]{ung_climate()}}, \code{\link[=ung_yield_table]{ung_yield_table()}}
 }

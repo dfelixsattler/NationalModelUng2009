@@ -14,7 +14,7 @@
 #' **Rounding.** All parameters were published with only 4 decimal places (a few
 #' large values with 4 significant digits), and the unrounded estimates are not
 #' available. This rounding alone makes predicted volume uncertain by a few
-#' percent; see *Parameters are rounded* in [ung_volume()] and
+#' percent; see *Parameters are rounded* in [ung_models] and
 #' the uncertainty interval of [ung_yield_table()].
 #'
 #' @format A data.frame with 25 rows and 26 columns:
@@ -26,7 +26,7 @@
 #'   \item{v30, v31, v32}{Nat1 volume parameters: intercept, and the
 #'     coefficients of ln(H) and ln(G).}
 #'   \item{CDh, CDg, CDv}{Nat1 Duan correction factors (see *Duan correction
-#'     factor* in [ung_volume()]).}
+#'     factor* in [ung_models]).}
 #'   \item{v10-v22}{Nat2 volume parameters, same structure as `h`.}
 #'   \item{CDv2}{Nat2 Duan correction factor.}
 #' }
@@ -37,7 +37,7 @@
 #' Fitting-data summary of the Ung et al. (2009) national models
 #'
 #' Per-species mean, standard deviation, minimum and maximum of the plot
-#' variables the models were fitted to. [ung_volume()] and [ung_check()] use the
+#' variables the models were fitted to. [ung_yield_table()] and [ung_check()] use the
 #' minima and maxima to flag when age, climate or predicted basal area (G) or
 #' volume (V) fall outside the data (extrapolation). The paper publishes these only for black
 #' spruce, jack pine and trembling aspen (its Table 2); the other 22 species come
@@ -46,7 +46,7 @@
 #' The `dd0_*` and `map_*` columns describe the climate of the fitting plots,
 #' that is, the field plots used to fit each species' model (spatial variation
 #' among plots, not inter-annual variation). `dd0_mean` and `map_mean` are the
-#' averages that [ung_volume()] uses when `dd0` and `map` are omitted.
+#' averages that [ung_yield_table()] uses when `dd0` and `map` are omitted.
 #'
 #' @format A data.frame with 25 rows: `species` (code, see [ung_species()]),
 #'   `n` (number of plots), and for each of `h` (dominant height H, m), `g` (basal

@@ -32,11 +32,12 @@
 #' @param age Numeric vector of ages (years). Default `seq(0, 150, by = 10)`.
 #' @param dd0,map Climate for each curve: `NULL` (default; each species uses
 #'   the average `dd0` and `map` of the plots used to fit its model, see
-#'   [ung_volume()]), one value used for every curve, or one value per
+#'   [ung_models]), one value used for every curve, or one value per
 #'   element of `species`.
 #' @param model `"Nat2"` (default) or `"Nat1"`. Nat2 is the default because it
 #'   predicts average volume directly; see *Which model to use* in
-#'   [ung_volume()].
+#'   [ung_models]. One model per call; to compare both, run the function
+#'   once for each and combine the results with [rbind()].
 #' @param ... Options for the uncertainty interval, used only when
 #'   `uncertainty = TRUE` (see *Uncertainty interval*): `n`, the number of
 #'   simulations (default 1000); `interval`, the central probability of the
@@ -52,7 +53,10 @@
 #'   `NULL` (no `id` column).
 #' @param nat1_bias_correction Logical. For Nat1 only: `TRUE` corrects the
 #'   bias of Nat1 volume; see *Why Nat1 volume needs a correction* in
-#'   [ung_volume()]. Default `FALSE`.
+#'   [ung_models]. Default `FALSE`.
+#' @param include_hg Logical. For Nat1 only: `TRUE` adds the columns `H`
+#'   (dominant height, m) and `G` (basal area, m2/ha) that Nat1 predicts on
+#'   the way to volume. Long format only. Default `FALSE`.
 #' @param uncertainty Logical. `TRUE` adds `lower` and `upper` columns (see
 #'   *Uncertainty interval*). Default `FALSE`.
 #' @param seed Optional integer, used only when `uncertainty = TRUE`. The
@@ -61,14 +65,15 @@
 #'   (for example `seed = 1`) to get exactly the same interval every time. The
 #'   `volume` column is not affected. Default `NULL` (no seed).
 #' @param format `"long"` (default): one row per curve and age, with columns
-#'   `species`, `model`, `dd0`, `map`, `age`, `volume` (and `lower`, `upper`).
+#'   `species`, `model`, `dd0`, `map`, `age`, `volume` (and `H`, `G`,
+#'   `lower`, `upper` when asked for).
 #'   `"wide"`: one row per curve, with columns `species`, `model`, `dd0`,
 #'   `map` and one column of volume per age, named `vol_0`, `vol_10`, and so
 #'   on. With `uncertainty = TRUE`, the wide table has three rows per curve,
 #'   told apart by the column `statistic` (`"volume"`, `"lower"`, `"upper"`).
 #'   Both layouts start with an `id` column when `id` is given.
 #' @param warn Logical. `FALSE` turns off the summary warning about
-#'   predictions outside the data (see [ung_volume()]). Default `TRUE`.
+#'   predictions outside the data (see [ung_models]). Default `TRUE`.
 #'
 #' @details For several stands, give one value of `species`, `dd0`, `map` and
 #'   `id` per curve. For example, a stand `"A"` with black spruce and a stand
@@ -77,11 +82,11 @@
 #'
 #'   A yield curve is a longer projection than the authors designed the models
 #'   for, and volume is sensitive to climate and to the rounding of the
-#'   parameters; see [ung_volume()] and run [ung_check()] on the long table for
+#'   parameters; see [ung_models] and run [ung_check()] on the long table for
 #'   details.
 #'
 #' @return A data.frame of class `ung_yield_table` (see `format`).
-#' @seealso [plot.ung_yield_table()], [ung_check()], [ung_volume()]
+#' @seealso [plot.ung_yield_table()], [ung_check()], [ung_models]
 #' @export
 #' @examples
 #' # Black spruce at a site in central Saskatchewan, ages 0 to 150
@@ -103,14 +108,23 @@
 #'                         nat1_bias_correction = TRUE)
 #' nat2 <- ung_yield_table("jack pine", dd0 = 2194, map = 461)
 #' plot(rbind(nat1, nat2))
+#'
+#' # Nat1 height and basal area as well as volume
+#' head(ung_yield_table("jack pine", dd0 = 2194, map = 461, model = "Nat1",
+#'                      include_hg = TRUE))
 ung_yield_table <- function(species, age = seq(0, 150, by = 10), dd0 = NULL,
-                            map = NULL, model = c("Nat2", "Nat1"), ...,
+                            map = NULL, model = "Nat2", ...,
                             id = NULL, nat1_bias_correction = FALSE,
-                            uncertainty = FALSE, seed = NULL,
-                            format = c("long", "wide"), warn = TRUE) {
-  model <- match.arg(model)
-  format <- match.arg(format)
+                            include_hg = FALSE, uncertainty = FALSE, seed = NULL,
+                            format = "long", warn = TRUE) {
+  model <- .check_choice(model, c("Nat2", "Nat1"), "model")
+  format <- .check_choice(format, c("long", "wide"), "format")
   .check_logical(uncertainty, "uncertainty")
+  .check_logical(include_hg, "include_hg")
+  if (include_hg && (model != "Nat1" || format != "long")) {
+    stop("`include_hg = TRUE` needs model = \"Nat1\" and format = \"long\": ",
+         "height and basal area come from the Nat1 equations.", call. = FALSE)
+  }
   if (!is.null(id) && (length(id) != length(species) || anyNA(id))) {
     stop("`id` must be NULL or have one value (not NA) per element of ",
          "`species`.", call. = FALSE)
@@ -123,6 +137,11 @@ ung_yield_table <- function(species, age = seq(0, 150, by = 10), dd0 = NULL,
                     dd0 = curve$dd0, map = curve$map,
                     age = curve$age, volume = curve[[paste0("V_", model)]],
                     stringsAsFactors = FALSE)
+  if (include_hg) {
+    out <- data.frame(out[c("species", "model", "dd0", "map", "age")],
+                      H = curve$H_Nat1, G = curve$G_Nat1, volume = out$volume,
+                      stringsAsFactors = FALSE)
+  }
   # .ung_curve() returns all ages of curve 1, then curve 2, and so on
   if (!is.null(id)) {
     out <- data.frame(id = rep(id, each = length(age)), out,

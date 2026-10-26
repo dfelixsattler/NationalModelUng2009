@@ -45,14 +45,14 @@ spreadsheets and CSV files (kept in the untracked `myfiles/` folder).
   median Nat2/Nat1 gap to under 1 %.
 * **Parameters are rounded to 4 decimal places in every source** (a few large
   values to 4 significant digits), and the unrounded estimates will not become
-  available. The effect is documented prominently (README, `?ung_volume`,
+  available. The effect is documented prominently (README, `?ung_models`,
   `?ung_parameters`) and is included by default in the uncertainty interval of `ung_yield_table()`
   (`rounding = TRUE`). At age 80 and species-mean climate it is about 9 %
   (3 % to 16 %) for Nat1 and about 4 % (up to 9 %) for Nat2, as an SD.
 * **Uncertainty is part of the main workflow** (`ung_yield_table(uncertainty =
   TRUE)`), not an add-on.
 * **One warning per call, plus `ung_check()`.** Warnings that fire on almost
-  every yield curve teach users to ignore warnings. `ung_volume()` now gives at
+  every yield curve teach users to ignore warnings. `ung_yield_table()` gives at
   most one plain-English warning (class `ung2009_warning`), only for problems
   the user can act on: missing input, age above the fitting data, climate
   outside the fitting data, output larger than any fitting plot. The other
@@ -63,7 +63,7 @@ spreadsheets and CSV files (kept in the untracked `myfiles/` folder).
 
 ### Models and data
 
-* `ung_volume()` implements Nat1 and Nat2 with vectorised, validated inputs.
+* The internal `ung_volume()` implements Nat1 and Nat2 with vectorised, validated inputs.
   Species can be given as a common name, a scientific name or a code
   (`ung_species()`).
 * **Parameters were verified cell by cell.** Nat1 (h, g, v coefficients and the three
@@ -125,7 +125,7 @@ spreadsheets and CSV files (kept in the untracked `myfiles/` folder).
   single class `ung2009_warning`; `warn = FALSE` turns them off.
 * **Time-horizon caution.** The authors' limitation statement (designed for
   increments over very short, < 10 year intervals, with no safeguard such as an
-  adjustment to merchantable stems per hectare) is quoted in the `ung_volume()`
+  adjustment to merchantable stems per hectare) is quoted in the `?ung_models`
   help page, the README and the vignette. `ung_check()` flags it (`long_horizon`)
   when one species and climate are predicted over ages that span more than 10
   years.
@@ -139,8 +139,9 @@ spreadsheets and CSV files (kept in the untracked `myfiles/` folder).
   (`lower`, `upper`) from climate uncertainty and parameter rounding (internal
   `.ung_uncertainty()`; options passed through `...`).
 * `ung_yield_table()` combines every species with every age (internal
-  `.ung_curve()`); `ung_volume()` matches arguments row by row.
-* `plot()` methods for `ung_volume` and `ung_yield_table` results. The yield
+  `.ung_curve()`). `ung_volume()` (row by row) is internal; Nat1 height and
+  basal area are available with `ung_yield_table(model = "Nat1", include_hg = TRUE)`.
+* A `plot()` method for `ung_yield_table` results. The yield
   table has a `model` column, so Nat1 and Nat2 tables can be combined with
   `rbind()` and plotted together.
 
@@ -284,7 +285,7 @@ Resolved on 2026-10-22:
 
 | Path | Contents |
 | --- | --- |
-| `R/ung_volume.R` | `ung_volume()`, input checks, the equations (`.predict`), the main documentation of model choice, rounding, Duan factor, climate names |
+| `R/ung_volume.R` | the `?ung_models` help page, the internal `ung_volume()`, input checks, the equations (`.predict`), the main documentation of model choice, rounding, Duan factor, climate names |
 | `R/ung_yield_table.R` | `ung_yield_table()` (long and wide CBM-style tables) |
 | `R/ung_curve.R` | `.ung_curve()` (internal: every species at every age) |
 | `R/checks.R` | `ung_check()`, the single warning, thresholds |
@@ -292,7 +293,7 @@ Resolved on 2026-10-22:
 | `R/ung_sensitivity.R` | `.ung_sensitivity()` (internal, used by `ung_check()`) |
 | `R/ung_uncertainty.R` | `.ung_uncertainty()` (internal) and the rounding draws |
 | `R/ung_climate.R` | `ung_climate()` (climr or ClimateNA), `ung_climate_from_climatena()`, the `dd0` derivation |
-| `R/plot.R` | `plot.ung_volume()`, `plot.ung_yield_table()` |
+| `R/plot.R` | `plot.ung_yield_table()` |
 | `R/data.R` | Documentation and provenance of `ung_parameters`, `ung_envelope`, `example_stands` and `example_climate` |
 | `data/`, `data-raw/` | Datasets and the scripts that build them (they read the untracked `myfiles/`) |
 | `vignettes/ung-workflow.Rmd` | Worked example |

@@ -9,13 +9,14 @@ ung_yield_table(
   age = seq(0, 150, by = 10),
   dd0 = NULL,
   map = NULL,
-  model = c("Nat2", "Nat1"),
+  model = "Nat2",
   ...,
   id = NULL,
   nat1_bias_correction = FALSE,
+  include_hg = FALSE,
   uncertainty = FALSE,
   seed = NULL,
-  format = c("long", "wide"),
+  format = "long",
   warn = TRUE
 )
 }
@@ -27,12 +28,13 @@ code; see \code{\link[=ung_species]{ung_species()}}). Each species is combined w
 
 \item{dd0, map}{Climate for each curve: \code{NULL} (default; each species uses
 the average \code{dd0} and \code{map} of the plots used to fit its model, see
-\code{\link[=ung_volume]{ung_volume()}}), one value used for every curve, or one value per
+\link{ung_models}), one value used for every curve, or one value per
 element of \code{species}.}
 
 \item{model}{\code{"Nat2"} (default) or \code{"Nat1"}. Nat2 is the default because it
 predicts average volume directly; see \emph{Which model to use} in
-\code{\link[=ung_volume]{ung_volume()}}.}
+\link{ung_models}. One model per call; to compare both, run the function
+once for each and combine the results with \code{\link[=rbind]{rbind()}}.}
 
 \item{...}{Options for the uncertainty interval, used only when
 \code{uncertainty = TRUE} (see \emph{Uncertainty interval}): \code{n}, the number of
@@ -51,7 +53,11 @@ of the result, so each curve can be matched back to its stand. Default
 
 \item{nat1_bias_correction}{Logical. For Nat1 only: \code{TRUE} corrects the
 bias of Nat1 volume; see \emph{Why Nat1 volume needs a correction} in
-\code{\link[=ung_volume]{ung_volume()}}. Default \code{FALSE}.}
+\link{ung_models}. Default \code{FALSE}.}
+
+\item{include_hg}{Logical. For Nat1 only: \code{TRUE} adds the columns \code{H}
+(dominant height, m) and \code{G} (basal area, m2/ha) that Nat1 predicts on
+the way to volume. Long format only. Default \code{FALSE}.}
 
 \item{uncertainty}{Logical. \code{TRUE} adds \code{lower} and \code{upper} columns (see
 \emph{Uncertainty interval}). Default \code{FALSE}.}
@@ -63,7 +69,8 @@ change slightly each time you run the same call. Give any whole number
 \code{volume} column is not affected. Default \code{NULL} (no seed).}
 
 \item{format}{\code{"long"} (default): one row per curve and age, with columns
-\code{species}, \code{model}, \code{dd0}, \code{map}, \code{age}, \code{volume} (and \code{lower}, \code{upper}).
+\code{species}, \code{model}, \code{dd0}, \code{map}, \code{age}, \code{volume} (and \code{H}, \code{G},
+\code{lower}, \code{upper} when asked for).
 \code{"wide"}: one row per curve, with columns \code{species}, \code{model}, \code{dd0},
 \code{map} and one column of volume per age, named \code{vol_0}, \code{vol_10}, and so
 on. With \code{uncertainty = TRUE}, the wide table has three rows per curve,
@@ -71,7 +78,7 @@ told apart by the column \code{statistic} (\code{"volume"}, \code{"lower"}, \cod
 Both layouts start with an \code{id} column when \code{id} is given.}
 
 \item{warn}{Logical. \code{FALSE} turns off the summary warning about
-predictions outside the data (see \code{\link[=ung_volume]{ung_volume()}}). Default \code{TRUE}.}
+predictions outside the data (see \link{ung_models}). Default \code{TRUE}.}
 }
 \value{
 A data.frame of class \code{ung_yield_table} (see \code{format}).
@@ -90,7 +97,7 @@ For several stands, give one value of \code{species}, \code{dd0}, \code{map} and
 
 A yield curve is a longer projection than the authors designed the models
 for, and volume is sensitive to climate and to the rounding of the
-parameters; see \code{\link[=ung_volume]{ung_volume()}} and run \code{\link[=ung_check]{ung_check()}} on the long table for
+parameters; see \link{ung_models} and run \code{\link[=ung_check]{ung_check()}} on the long table for
 details.
 }
 \section{Uncertainty interval}{
@@ -138,7 +145,11 @@ nat1 <- ung_yield_table("jack pine", dd0 = 2194, map = 461, model = "Nat1",
                         nat1_bias_correction = TRUE)
 nat2 <- ung_yield_table("jack pine", dd0 = 2194, map = 461)
 plot(rbind(nat1, nat2))
+
+# Nat1 height and basal area as well as volume
+head(ung_yield_table("jack pine", dd0 = 2194, map = 461, model = "Nat1",
+                     include_hg = TRUE))
 }
 \seealso{
-\code{\link[=plot.ung_yield_table]{plot.ung_yield_table()}}, \code{\link[=ung_check]{ung_check()}}, \code{\link[=ung_volume]{ung_volume()}}
+\code{\link[=plot.ung_yield_table]{plot.ung_yield_table()}}, \code{\link[=ung_check]{ung_check()}}, \link{ung_models}
 }

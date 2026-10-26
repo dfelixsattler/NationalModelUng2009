@@ -13,7 +13,7 @@ Main functions:
 \itemize{
 \item \code{\link[=ung_yield_table]{ung_yield_table()}} makes tables of volume by age (yield curves), for
 example for the Carbon Budget Model, and plots them.
-\item \code{\link[=ung_volume]{ung_volume()}} predicts height, basal area and volume, row by row.
+\item \link{ung_models} explains the models, their climate inputs and their limits.
 \item \code{\link[=ung_check]{ung_check()}} lists the cautions that apply to a set of predictions.
 \item \code{\link[=ung_climate]{ung_climate()}} looks up degree-days and precipitation with climr or
 ClimateNA.

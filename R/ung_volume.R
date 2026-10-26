@@ -1,8 +1,10 @@
-#' Predict stand volume with the Ung et al. (2009) national models
+#' About the Ung et al. (2009) national models
 #'
-#' Predicts gross merchantable volume (m3/ha) for one or many stands from the
-#' stand's age and two climate values, using the two national growth-and-yield
-#' models of Ung et al. (2009).
+#' How the package predicts gross merchantable volume (m3/ha) from stand age
+#' and two climate values, using the two national growth-and-yield models of
+#' Ung et al. (2009): the equations, the climate inputs, which model to use and
+#' the limitations. The predictions themselves are made with
+#' [ung_yield_table()].
 #'
 #' * **Nat1** first predicts dominant height `H` (m) and basal area `G`
 #'   (m2/ha), then predicts volume from them:
@@ -20,7 +22,7 @@
 #' The choice is left to the user. **Nat2** is the default of
 #' [ung_yield_table()] because it predicts average volume directly, and its
 #' parameters are less affected by rounding (see *Parameters are rounded*).
-#' **Nat1** also gives height and basal area, but its published volume is
+#' **Nat1** also gives height and basal area (`include_hg = TRUE`), but its published volume is
 #' biased low (Nat2 is a median of about 20 % higher). For this reason Nat1
 #' has an optional bias correction; read *Why Nat1 volume needs a correction*.
 #'
@@ -73,7 +75,7 @@
 #' @section How Nat1 calculates volume:
 #' The Nat1 volume equation is given the predicted *logarithms* of height and
 #' basal area, before their Duan factors are applied. It is not given the
-#' logarithms of the reported `H_Nat1` and `G_Nat1`, which already include
+#' logarithms of the reported height `H` and basal area `G`, which already include
 #' their Duan factors. This is how the authors fitted and wrote the system (in
 #' their file `system equations.xls`) and is what the earlier R scripts do. It
 #' is important: using the corrected height and basal area instead would raise
@@ -126,9 +128,8 @@
 #'
 #' **Why it is off by default.** The correction was added as an option in this
 #' package; it is not part of the published model, and it rests on the
-#' assumptions above. Nat2 does not need it. Height (`H_Nat1`) and basal area
-#' (`G_Nat1`) are not changed by it. Height (`H_Nat1`) and
-#' basal area (`G_Nat1`) are not changed by it.
+#' assumptions above. Nat2 does not need it. Height (`H`) and basal area
+#' (`G`) are not changed by it.
 #'
 #' @section Parameters are rounded to 4 decimal places:
 #' The paper and every file supplied by the authors give the parameters to 4
@@ -163,7 +164,7 @@
 #' projection in this sense.
 #'
 #' @section Warnings and checks:
-#' With `warn = TRUE`, `ung_volume()` gives at most **one** warning per call,
+#' With `warn = TRUE`, [ung_yield_table()] gives at most **one** warning per call,
 #' in plain English, and only for problems you can do something about:
 #' * `age`, `dd0` or `map` is missing (the prediction is `NA`);
 #' * the stand is older than any stand used to fit the species' model;
@@ -192,29 +193,6 @@
 #' * The ability to predict growth over short periods was rated moderate to
 #'   poor, comparable with provincial models.
 #'
-#' @param species Character vector. Species code, scientific name or common name
-#'   (any capitalisation); see [ung_species()].
-#' @param age Numeric vector. Stand age in years (0 or more).
-#' @param dd0 Numeric vector. Degree-days above 0 degrees C in a year (see
-#'   *Climate inputs*). If `NULL` (default), the average `dd0` of the plots used
-#'   to fit that species' model is used (column `dd0_mean` of [ung_envelope]);
-#'   see *Climate used when `dd0` and `map` are omitted*.
-#' @param map Numeric vector. Mean annual precipitation in mm. If `NULL`
-#'   (default), the average `map` of the plots used to fit that species' model
-#'   is used (column `map_mean` of [ung_envelope]).
-#' @param model One of `"both"` (default), `"Nat1"` or `"Nat2"`.
-#' @param nat1_bias_correction Logical. `TRUE` multiplies Nat1 volume by the
-#'   approximate correction described in *Why Nat1 volume needs a correction*. Default
-#'   `FALSE` (the published model).
-#' @param warn Logical. Set to `FALSE` to skip the warning and the message about
-#'   default climate.
-#'
-#' @details Arguments are matched **row by row** and recycled: each must have
-#'   length 1 or the same length as the longest. Species 1 is paired with age
-#'   1, species 2 with age 2, and so on. To predict several species over a range
-#'   of ages, use [ung_yield_table()], which combines every species with
-#'   every age.
-#'
 #' @section Climate used when `dd0` and `map` are omitted:
 #' The authors fitted each species' model to a set of measured field plots (the
 #' "fitting plots"). Each plot has a `dd0` and a `map`. If you leave out `dd0`,
@@ -234,11 +212,6 @@
 #' [ung_climate()]), and use `ung_yield_table(uncertainty = TRUE)` to see how
 #' uncertain the prediction is.
 #'
-#' @return A data.frame of class `ung_volume` with one row per input row:
-#'   `species` (code), `age`, `dd0`, `map` and, depending on `model`,
-#'   `H_Nat1` (dominant height, m), `G_Nat1` (basal area, m2/ha), `V_Nat1`
-#'   (volume, m3/ha) and `V_Nat2` (volume, m3/ha).
-#'
 #' @references
 #' Ung, C.-H., Bernier, P.Y., Guo, X.J. and Lambert, M.-C. 2009. A simple
 #' growth and yield model for assessing changes in standing volume across
@@ -250,31 +223,15 @@
 #'
 #' @seealso [ung_yield_table()], [ung_check()],
 #'   [ung_climate()], [ung_species()]
-#' @export
-#' @examples
-#' # A typical stand of each species at age 80. `dd0` and `map` are omitted, so
-#' # each species uses the average climate of the plots used to fit its model
-#' # (shown in the dd0 and map columns of the result)
-#' ung_volume(c("black spruce", "Douglas-fir"), age = 80)
-#'
-#' # Trembling aspen at a boreal site, from age 0
-#' aspen <- ung_volume("trembling aspen", age = seq(0, 150, by = 10),
-#'                     dd0 = 2200, map = 750)
-#' head(aspen)
-#' ung_check(aspen)
-#'
-#' # Nat1 with the optional bias correction
-#' ung_volume("black spruce", age = 80, dd0 = 2079, map = 965,
-#'            nat1_bias_correction = TRUE)
-#'
-#' # Several stands at once
-#' stands <- data.frame(species = c("PICE.MAR", "PINU.BAN"),
-#'                      age = c(80, 60), dd0 = c(2000, 2300), map = c(900, 700))
-#' ung_volume(stands$species, stands$age, stands$dd0, stands$map, model = "Nat2")
+#' @name ung_models
+NULL
+
+# Predict H, G and V row by row (species 1 with age 1, and so on). Internal
+# engine for ung_yield_table() and ung_check().
 ung_volume <- function(species, age, dd0 = NULL, map = NULL,
-                       model = c("both", "Nat1", "Nat2"),
+                       model = "both",
                        nat1_bias_correction = FALSE, warn = TRUE) {
-  model <- match.arg(model)
+  model <- .check_choice(model, c("both", "Nat1", "Nat2"), "model")
   .check_logical(nat1_bias_correction, "nat1_bias_correction")
 
   # Validate and recycle inputs, then predict
@@ -283,7 +240,6 @@ ung_volume <- function(species, age, dd0 = NULL, map = NULL,
   out <- cbind(x, .predict(x, model, nat1_bias_correction = nat1_bias_correction))
   attr(out, "defaulted") <- NULL
   attr(out, "nat1_bias_correction") <- nat1_bias_correction
-  class(out) <- c("ung_volume", "data.frame")
 
   # One plain-English warning for problems the user can act on
   if (isTRUE(warn)) .warn_summary(out)
@@ -296,6 +252,16 @@ ung_volume <- function(species, age, dd0 = NULL, map = NULL,
     stop("`", name, "` must be TRUE or FALSE.", call. = FALSE)
   }
   invisible(x)
+}
+
+#' Check that an option is exactly one of the allowed values
+#' @noRd
+.check_choice <- function(x, choices, name) {
+  if (!is.character(x) || length(x) != 1L || !x %in% choices) {
+    stop("`", name, "` must be one of: ",
+         paste0('"', choices, '"', collapse = ", "), ".", call. = FALSE)
+  }
+  x
 }
 
 # Validate inputs, resolve species names and recycle to a common length.

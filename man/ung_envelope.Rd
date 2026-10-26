@@ -20,7 +20,7 @@ ung_envelope
 }
 \description{
 Per-species mean, standard deviation, minimum and maximum of the plot
-variables the models were fitted to. \code{\link[=ung_volume]{ung_volume()}} and \code{\link[=ung_check]{ung_check()}} use the
+variables the models were fitted to. \code{\link[=ung_yield_table]{ung_yield_table()}} and \code{\link[=ung_check]{ung_check()}} use the
 minima and maxima to flag when age, climate or predicted basal area (G) or
 volume (V) fall outside the data (extrapolation). The paper publishes these only for black
 spruce, jack pine and trembling aspen (its Table 2); the other 22 species come
@@ -30,6 +30,6 @@ from the \code{DATASUMMARY} sheet of the developers' spreadsheet.
 The \verb{dd0_*} and \verb{map_*} columns describe the climate of the fitting plots,
 that is, the field plots used to fit each species' model (spatial variation
 among plots, not inter-annual variation). \code{dd0_mean} and \code{map_mean} are the
-averages that \code{\link[=ung_volume]{ung_volume()}} uses when \code{dd0} and \code{map} are omitted.
+averages that \code{\link[=ung_yield_table]{ung_yield_table()}} uses when \code{dd0} and \code{map} are omitted.
 }
 \keyword{datasets}

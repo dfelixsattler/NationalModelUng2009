@@ -11,9 +11,7 @@ Given a stand's **age**, the yearly **degree-days above 0 °C** (`dd0`) and the
 gross merchantable volume (m³/ha) for 25 Canadian tree species. In the paper,
 this is the gross total volume of the live merchantable trees in the stand,
 where a merchantable tree is one with a diameter at breast height greater than
-9 cm. It is meant for
-those who need a volume-by-age curve, for example as input to the Carbon
-Budget Model (CBM). Users, however, should be aware of the limitations of the models (e.g., original authors' intended projection period; biases in the Nat1 equation, etc.). These are documented in the text below and in the associated functions.
+9 cm. Users should be aware of the limitations of the models (e.g., original authors' intended projection period; biases in the Nat1 equation, etc.). These are documented in the text below and in the associated functions.
 
 The paper has two models:
 
@@ -60,11 +58,11 @@ A step-by-step worked example is in the vignette:
 
 | Function | What it does |
 | --- | --- |
-| `ung_yield_table()` | Simple table of volume by age (0 to 150 by default), one model (Nat2 by default), long or wide layout, optional uncertainty interval. Has a `plot()` method. Start here. |
+| `ung_yield_table()` | Simple table of volume by age (0 to 150 by default), one model (Nat2 by default), long or wide layout, optional uncertainty interval, optional Nat1 height and basal area (`include_hg = TRUE`). Has a `plot()` method. Start here. |
 | `ung_check()` | Lists every caution that applies to a set of predictions, with the number of rows affected. |
-| `ung_volume()` | Predicts H, G and V for individual stands, matched row by row (stand 1 with age 1, and so on). |
 | `ung_climate()`, `ung_climate_from_climatena()` | Get `dd0` and `map` (1981–2010 averages by default) for a location from climr or a local copy of ClimateNA (Windows), or from your own ClimateNA/ClimateBC output. |
 | `ung_species()` | The 25 species, with codes, scientific and common names. |
+| `?ung_models` | Help page on the models: equations, climate inputs, which model to use, the Nat1 correction, rounded parameters and limitations. |
 
 ## Which model to use
 
@@ -198,7 +196,7 @@ Starting yield curves from Age 0 is allowed and gives 0 for H, G and V. However,
 
 ## Warnings and checks
 
-`ung_volume()` (and the functions built on it) gives **at most one warning per
+`ung_yield_table()` gives **at most one warning per
 call** for problems you can do something
 about:
 

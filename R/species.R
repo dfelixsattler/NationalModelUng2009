@@ -3,7 +3,7 @@
 #' Returns the 25 species for which Ung et al. (2009) published parameters,
 #' with the code used internally by the models, the scientific name and the
 #' common name. Any of the three can be used as the `species` argument of
-#' [ung_volume()].
+#' [ung_yield_table()].
 #'
 #' @return A data.frame with columns `code`, `scientific` and `common`.
 #' @export

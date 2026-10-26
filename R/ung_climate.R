@@ -1,9 +1,8 @@
 #' Get the climate inputs of the models for stand locations
 #'
 #' Returns degree-days above 0 degrees C (`dd0`) and mean annual precipitation
-#' (`map`, mm) for each stand location, ready for [ung_volume()] or
-#' [ung_yield_table()]. The values come from either
-#' [climr](https://github.com/bcgov/climr) (an R package) or a local copy of
+#' (`map`, mm) for each stand location, ready for [ung_yield_table()]. The
+#' values come from either [climr](https://github.com/bcgov/climr) (an R package) or a local copy of
 #' ClimateNA (a Windows program), averaged over 1981-2010 or over the years
 #' you choose.
 #'
@@ -16,7 +15,7 @@
 #' (climr) and `DD_0` (ClimateNA) are degree-days *below* 0 degrees C, a
 #' measure of how cold the winter is: the opposite quantity. Never pass
 #' `DDsub0`, `DD_0` or `DD5` as `dd0`. See the table in the *Climate inputs*
-#' section of [ung_volume()].
+#' section of [ung_models].
 #'
 #' **How `dd0` is calculated.** Both programs provide degree-days above 18
 #' degrees C (`DD18`), below 18 degrees C (`DDsub18`, ClimateNA `DD_18`) and
@@ -34,7 +33,7 @@
 #' @section Differences from the paper's climate:
 #' Ung et al. (2009) used interpolated long-term climate "to which inter-annual
 #' variability has been restored" (McKenney et al. 2001; see *Climate inputs*
-#' in [ung_volume()] for what this means). That is not the same product or
+#' in [ung_models] for what this means). That is not the same product or
 #' period as the climr or ClimateNA values. Expect some differences in `dd0`
 #' and `map`; because predicted volume can be sensitive to climate (see
 #' [ung_check()]), they can matter.
@@ -69,13 +68,13 @@
 #'
 #' @return A data.frame with columns `id`, `lon`, `lat`, `elev`, `dd0` and
 #'   `map`, one row per location.
-#' @seealso [ung_volume()], [ung_climate_from_climatena()]
+#' @seealso [ung_yield_table()], [ung_climate_from_climatena()]
 #' @export
 #' @examples
 #' \dontrun{
 #' # 1981-2010 averages from climr
 #' clim <- ung_climate(lon = -105.5, lat = 54.1, elev = 500)
-#' ung_volume("black spruce", age = 80, dd0 = clim$dd0, map = clim$map)
+#' ung_yield_table("black spruce", dd0 = clim$dd0, map = clim$map)
 #'
 #' # Average of 2010 to 2019 from ClimateNA
 #' ung_climate(lon = -105.5, lat = 54.1, elev = 500, years = 2010:2019,
@@ -83,9 +82,9 @@
 #'             exe = "C:/ClimateNA_v760/ClimateNA_v7.60.exe")
 #' }
 ung_climate <- function(lon, lat, elev, id = seq_along(lon), years = NULL,
-                        source = c("climr", "climatena"), exe = NULL,
+                        source = "climr", exe = NULL,
                         quiet = FALSE) {
-  source <- match.arg(source)
+  source <- .check_choice(source, c("climr", "climatena"), "source")
   .check_locations(lon, lat, elev, id)
   if (!is.null(years) && (!is.numeric(years) || length(years) == 0L ||
                           anyNA(years) || any(years != round(years)))) {
@@ -244,7 +243,7 @@ ung_climate <- function(lon, lat, elev, id = seq_along(lon), years = NULL,
 #'
 #' Use this when you have run ClimateNA or ClimateBC yourself. It takes the
 #' annual variables from a ClimateNA/ClimateBC output table and returns `dd0`
-#' and `map` ready for [ung_volume()]. It does not run ClimateNA; to run it
+#' and `map` ready for [ung_yield_table()]. It does not run ClimateNA; to run it
 #' from R, use `ung_climate(source = "climatena")`, which calls this
 #' function on the result.
 #'
@@ -273,7 +272,7 @@ ung_climate <- function(lon, lat, elev, id = seq_along(lon), years = NULL,
 #' Request a climate **normal** (for example `Normal_1981_2010.nrm`) so that the
 #' values describe the location over several decades. A single year
 #' (`Year_2020.ann`) gives that one year's weather, which is not what the
-#' models were fitted to; see the *Climate inputs* section of [ung_volume()].
+#' models were fitted to; see the *Climate inputs* section of [ung_models].
 #' This function does not check which period the table holds.
 #'
 #' @param x A data.frame of ClimateNA/ClimateBC annual output.
@@ -282,7 +281,7 @@ ung_climate <- function(lon, lat, elev, id = seq_along(lon), years = NULL,
 #' @param quiet Logical. Suppress the one-line message.
 #'
 #' @return A data.frame with columns `id`, `dd0` and `map`, one row per row of `x`.
-#' @seealso [ung_climate()], [ung_volume()]
+#' @seealso [ung_climate()], [ung_yield_table()]
 #' @export
 #' @examples
 #' # Annual normals from ClimateNA 7.60 for lon -105.5, lat 54.1, elev 500 m
