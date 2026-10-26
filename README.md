@@ -60,12 +60,9 @@ A step-by-step worked example is in the vignette:
 
 | Function | What it does |
 | --- | --- |
-| `ung_yield_table()` | Simple table of volume by age, one model (Nat2 by default), long or wide layout, optional uncertainty interval. Start here. |
-| `ung_uncertainty()` | Volume with an uncertainty interval from climate uncertainty and the rounding of the parameters. Has a `plot()` method. |
+| `ung_yield_table()` | Simple table of volume by age (0 to 150 by default), one model (Nat2 by default), long or wide layout, optional uncertainty interval. Has a `plot()` method. Start here. |
 | `ung_check()` | Lists every caution that applies to a set of predictions, with the number of rows affected. |
 | `ung_volume()` | Predicts H, G and V for individual stands, matched row by row (stand 1 with age 1, and so on). |
-| `ung_curve()` | Every species at every age, with both models. Has a `plot()` method. |
-| `ung_sensitivity()` | By how many percent volume changes if `dd0` is off by 100 degree-days or `map` by 100 mm. |
 | `ung_climate()`, `ung_climate_from_climatena()` | Get `dd0` and `map` (1981–2010 averages by default) for a location from climr or a local copy of ClimateNA (Windows), or from your own ClimateNA/ClimateBC output. |
 | `ung_species()` | The 25 species, with codes, scientific and common names. |
 

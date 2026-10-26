@@ -6,7 +6,7 @@
 \usage{
 ung_yield_table(
   species,
-  age = seq(0, 250, by = 10),
+  age = seq(0, 150, by = 10),
   dd0 = NULL,
   map = NULL,
   model = c("Nat2", "Nat1"),
@@ -21,22 +21,27 @@ ung_yield_table(
 }
 \arguments{
 \item{species}{Character vector of species (common name, scientific name or
-code; see \code{\link[=ung_species]{ung_species()}}).}
+code; see \code{\link[=ung_species]{ung_species()}}). Each species is combined with every age.}
 
-\item{age}{Numeric vector of ages (years). Default \code{seq(0, 250, by = 10)}.}
+\item{age}{Numeric vector of ages (years). Default \code{seq(0, 150, by = 10)}.}
 
-\item{dd0, map}{Climate for each species: \code{NULL} (default; each species uses
+\item{dd0, map}{Climate for each curve: \code{NULL} (default; each species uses
 the average \code{dd0} and \code{map} of the plots used to fit its model, see
-\code{\link[=ung_volume]{ung_volume()}}), one value used for every species, or one value
-per species.}
+\code{\link[=ung_volume]{ung_volume()}}), one value used for every curve, or one value per
+element of \code{species}.}
 
 \item{model}{\code{"Nat2"} (default) or \code{"Nat1"}. Nat2 is the default because it
 predicts average volume directly; see \emph{Which model to use} in
 \code{\link[=ung_volume]{ung_volume()}}.}
 
-\item{...}{Passed to \code{\link[=ung_uncertainty]{ung_uncertainty()}} when \code{uncertainty = TRUE}, for
-example \code{n}, \code{interval}, \code{sd_dd0}, \code{sd_map} or \code{rounding}. Arguments after
-\code{...} must be named in full.}
+\item{...}{Options for the uncertainty interval, used only when
+\code{uncertainty = TRUE} (see \emph{Uncertainty interval}): \code{n}, the number of
+simulations (default 1000); \code{interval}, the central probability of the
+interval (default 0.9); \code{sd_dd0} and \code{sd_map}, the standard deviation of
+\code{dd0} (degree-days) and \code{map} (mm), one value or one per curve (default:
+the species values in \link{ung_envelope}; 0 holds the variable fixed); \code{cor},
+the correlation between the \code{dd0} and \code{map} draws (default 0); and
+\code{rounding} (default \code{TRUE}). Arguments after \code{...} must be named in full.}
 
 \item{id}{Optional label for each curve, for example a stand ID: one value
 per element of \code{species}. The same label can be repeated, for example for
@@ -44,14 +49,12 @@ a stand with two species. When given, it becomes the first column, \code{id},
 of the result, so each curve can be matched back to its stand. Default
 \code{NULL} (no \code{id} column).}
 
-\item{nat1_bias_correction}{Logical. \code{TRUE} multiplies Nat1 volume by the
-approximate correction described in \emph{Why Nat1 volume needs a correction}. Default
-\code{FALSE} (the published model).}
+\item{nat1_bias_correction}{Logical. For Nat1 only: \code{TRUE} corrects the
+bias of Nat1 volume; see \emph{Why Nat1 volume needs a correction} in
+\code{\link[=ung_volume]{ung_volume()}}. Default \code{FALSE}.}
 
-\item{uncertainty}{Logical. \code{TRUE} adds \code{lower} and \code{upper} columns: the
-interval from \code{\link[=ung_uncertainty]{ung_uncertainty()}}, which includes climate uncertainty and
-the rounding of the parameters. With the default climate spread this
-interval is wide; see \code{\link[=ung_uncertainty]{ung_uncertainty()}}. Default \code{FALSE}.}
+\item{uncertainty}{Logical. \code{TRUE} adds \code{lower} and \code{upper} columns (see
+\emph{Uncertainty interval}). Default \code{FALSE}.}
 
 \item{seed}{Optional integer, used only when \code{uncertainty = TRUE}. The
 interval comes from random draws, so without a seed \code{lower} and \code{upper}
@@ -59,31 +62,30 @@ change slightly each time you run the same call. Give any whole number
 (for example \code{seed = 1}) to get exactly the same interval every time. The
 \code{volume} column is not affected. Default \code{NULL} (no seed).}
 
-\item{format}{\code{"long"} (default): one row per species, climate and age, with
-columns \code{species}, \code{dd0}, \code{map}, \code{age}, \code{volume} (and \code{lower}, \code{upper}).
-\code{"wide"}: one row per curve, with columns \code{species}, \code{dd0}, \code{map} and one
-column of volume per age, named \code{vol_0}, \code{vol_10}, and so on. With
-\code{uncertainty = TRUE}, the wide table has three rows per curve, told apart
-by the column \code{statistic} (\code{"volume"}, \code{"lower"}, \code{"upper"}). Both
-layouts start with an \code{id} column when \code{id} is given.}
+\item{format}{\code{"long"} (default): one row per curve and age, with columns
+\code{species}, \code{model}, \code{dd0}, \code{map}, \code{age}, \code{volume} (and \code{lower}, \code{upper}).
+\code{"wide"}: one row per curve, with columns \code{species}, \code{model}, \code{dd0},
+\code{map} and one column of volume per age, named \code{vol_0}, \code{vol_10}, and so
+on. With \code{uncertainty = TRUE}, the wide table has three rows per curve,
+told apart by the column \code{statistic} (\code{"volume"}, \code{"lower"}, \code{"upper"}).
+Both layouts start with an \code{id} column when \code{id} is given.}
 
-\item{warn}{Logical. Set to \code{FALSE} to skip the warning and the message about
-default climate.}
+\item{warn}{Logical. \code{FALSE} turns off the summary warning about
+predictions outside the data (see \code{\link[=ung_volume]{ung_volume()}}). Default \code{TRUE}.}
 }
 \value{
-A data.frame (see \code{format}). The attribute \code{"model"} records the
-model used.
+A data.frame of class \code{ung_yield_table} (see \code{format}).
 }
 \description{
 Returns gross merchantable volume (m3/ha) by age for one or more species,
 using one model, in the simple layout that yield-table tools such as the
 Carbon Budget Model expect. Ages start at 0 by default, where volume is 0.
+Use \code{\link[=plot]{plot()}} to draw the curves.
 }
 \details{
-Each species is combined with every age, as in \code{\link[=ung_curve]{ung_curve()}}. For
-several stands, give one value of \code{species}, \code{dd0}, \code{map} and \code{id} per
-curve. For example, a stand \code{"A"} with black spruce and a stand \code{"B"} with
-black spruce and jack pine:
+For several stands, give one value of \code{species}, \code{dd0}, \code{map} and
+\code{id} per curve. For example, a stand \code{"A"} with black spruce and a stand
+\code{"B"} with black spruce and jack pine:
 \code{ung_yield_table(c("black spruce", "black spruce", "jack pine"), id = c("A", "B", "B"), dd0 = c(1800, 2200, 2200), map = c(600, 900, 900))}.
 
 A yield curve is a longer projection than the authors designed the models
@@ -91,20 +93,52 @@ for, and volume is sensitive to climate and to the rounding of the
 parameters; see \code{\link[=ung_volume]{ung_volume()}} and run \code{\link[=ung_check]{ung_check()}} on the long table for
 details.
 }
+\section{Uncertainty interval}{
+
+With \code{uncertainty = TRUE}, the table gets \code{lower} and \code{upper} columns: the
+central 90 \% interval (by default) of many simulated volumes. Each
+simulation uses slightly different climate and slightly different
+parameters:
+\itemize{
+\item \strong{Climate.} \code{dd0} and \code{map} are drawn at random around the values you
+supplied. By default they vary as much as climate varies among the plots
+used to fit that species' model across Canada (\code{dd0_sd} and \code{map_sd} in
+\link{ung_envelope}), so the interval is wide. If you know how uncertain your
+own climate values are, set \code{sd_dd0} and \code{sd_map}.
+\item \strong{Rounding of the parameters.} The authors published every parameter
+with only 4 decimal places, and the unrounded values are not available.
+Each simulation picks every parameter at random within half a unit of its
+last printed digit (for example, 0.1234 becomes a value between 0.12335
+and 0.12345). Keep the default \code{rounding = TRUE}; \code{rounding = FALSE} only
+shows how much of the interval comes from climate alone.
+}
+
+The interval does \strong{not} include the statistical uncertainty of the fitted
+parameters, or the variation of real stands around the model, so real
+stands vary more than the interval shows.
+}
+
 \examples{
-# Black spruce at a site in central Saskatchewan, ages 0 to 200
-tab <- ung_yield_table("black spruce", age = seq(0, 200, by = 10),
-                       dd0 = 2194, map = 461)
+# Black spruce at a site in central Saskatchewan, ages 0 to 150
+tab <- ung_yield_table("black spruce", dd0 = 2194, map = 461)
 head(tab)
+plot(tab)
 
 # One row per curve, one column per age
 ung_yield_table(c("black spruce", "jack pine"), age = seq(0, 100, by = 20),
                 dd0 = 2194, map = 461, format = "wide")
 
 # With an uncertainty interval
-ung_yield_table("jack pine", age = seq(0, 100, by = 20), dd0 = 2194,
-                map = 461, uncertainty = TRUE, seed = 1)
+tab <- ung_yield_table("jack pine", dd0 = 2194, map = 461,
+                       uncertainty = TRUE, seed = 1)
+plot(tab)
+
+# Nat1 and Nat2 on one plot
+nat1 <- ung_yield_table("jack pine", dd0 = 2194, map = 461, model = "Nat1",
+                        nat1_bias_correction = TRUE)
+nat2 <- ung_yield_table("jack pine", dd0 = 2194, map = 461)
+plot(rbind(nat1, nat2))
 }
 \seealso{
-\code{\link[=ung_curve]{ung_curve()}}, \code{\link[=ung_uncertainty]{ung_uncertainty()}}, \code{\link[=ung_check]{ung_check()}}
+\code{\link[=plot.ung_yield_table]{plot.ung_yield_table()}}, \code{\link[=ung_check]{ung_check()}}, \code{\link[=ung_volume]{ung_volume()}}
 }

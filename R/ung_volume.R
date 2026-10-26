@@ -141,8 +141,8 @@
 #' volume at age 80 and each species' average climate varies by about 9 %
 #' (standard deviation) for Nat1, from 4 % to 16 % depending on the species
 #' (tamarack is the worst), and by about 4 % for Nat2 (at most 9 %). This is
-#' in addition to every other source of uncertainty. [ung_uncertainty()]
-#' includes it by default (`rounding = TRUE`).
+#' in addition to every other source of uncertainty. The uncertainty interval
+#' of [ung_yield_table()] includes it by default (`rounding = TRUE`).
 #'
 #' @section Age 0:
 #' Age 0 is allowed and gives 0 for height, basal area and volume, which is
@@ -212,8 +212,8 @@
 #' @details Arguments are matched **row by row** and recycled: each must have
 #'   length 1 or the same length as the longest. Species 1 is paired with age
 #'   1, species 2 with age 2, and so on. To predict several species over a range
-#'   of ages, use [ung_curve()] or [ung_yield_table()], which combine every
-#'   species with every age.
+#'   of ages, use [ung_yield_table()], which combines every species with
+#'   every age.
 #'
 #' @section Climate used when `dd0` and `map` are omitted:
 #' The authors fitted each species' model to a set of measured field plots (the
@@ -231,8 +231,8 @@
 #' The result is a prediction for a **typical stand of each species**, not for
 #' any particular site. It is useful for comparing species or sketching a
 #' curve. For a real stand, supply the climate of its location (see
-#' [ung_climate()]), and use [ung_uncertainty()] to see how uncertain the
-#' prediction is.
+#' [ung_climate()]), and use `ung_yield_table(uncertainty = TRUE)` to see how
+#' uncertain the prediction is.
 #'
 #' @return A data.frame of class `ung_volume` with one row per input row:
 #'   `species` (code), `age`, `dd0`, `map` and, depending on `model`,
@@ -248,7 +248,7 @@
 #' Duan, N. 1983. Smearing estimate: a nonparametric retransformation method.
 #' Journal of the American Statistical Association 78: 605-610.
 #'
-#' @seealso [ung_yield_table()], [ung_uncertainty()], [ung_check()],
+#' @seealso [ung_yield_table()], [ung_check()],
 #'   [ung_climate()], [ung_species()]
 #' @export
 #' @examples
@@ -333,7 +333,7 @@ ung_volume <- function(species, age, dd0 = NULL, map = NULL,
   if (any(c(length(codes), lengths(nums)) %nin% c(1L, n))) {
     stop("`species`, `age`, `dd0` and `map` must have length 1 or the same length. ",
          "Values are matched row by row. To predict several species over a ",
-         "range of ages, use `ung_curve()` or `ung_yield_table()`.",
+         "range of ages, use `ung_yield_table()`.",
          call. = FALSE)
   }
 
@@ -369,7 +369,7 @@ ung_volume <- function(species, age, dd0 = NULL, map = NULL,
 `%nin%` <- function(x, table) !(x %in% table)
 
 # Core equations, vectorised over the rows of `x`. `p` holds one parameter row
-# per row of `x`; by default it is looked up from `ung_parameters` (ung_uncertainty()
+# per row of `x`; by default it is looked up from `ung_parameters` (.ung_uncertainty()
 # passes perturbed copies). Rows with age 0 return 0.
 .predict <- function(x, model, p = NULL, nat1_bias_correction = FALSE) {
   if (is.null(p)) {

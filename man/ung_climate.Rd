@@ -79,7 +79,7 @@ variability has been restored" (McKenney et al. 2001; see \emph{Climate inputs}
 in \code{\link[=ung_volume]{ung_volume()}} for what this means). That is not the same product or
 period as the climr or ClimateNA values. Expect some differences in \code{dd0}
 and \code{map}; because predicted volume can be sensitive to climate (see
-\code{\link[=ung_sensitivity]{ung_sensitivity()}}), they can matter.
+\code{\link[=ung_check]{ung_check()}}), they can matter.
 Do not use future-climate projections: the authors state the climate terms
 are descriptive only and not suitable for climate-change impact projection.
 }

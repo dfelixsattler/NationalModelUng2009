@@ -8,8 +8,7 @@ ung_check(x, rows = FALSE)
 }
 \arguments{
 \item{x}{A data.frame with columns \code{species}, \code{age}, \code{dd0} and \code{map}, such
-as the result of \code{\link[=ung_volume]{ung_volume()}}, \code{\link[=ung_curve]{ung_curve()}}, \code{\link[=ung_uncertainty]{ung_uncertainty()}} or
-\code{\link[=ung_yield_table]{ung_yield_table()}} (long format).}
+as the result of \code{\link[=ung_volume]{ung_volume()}} or \code{\link[=ung_yield_table]{ung_yield_table()}} (long format).}
 
 \item{rows}{Logical. \code{FALSE} (default) returns one line per check. \code{TRUE}
 returns one line per row of \code{x}, with a \code{TRUE}/\code{FALSE} column per check.}
@@ -36,7 +35,7 @@ to almost every yield curve and would otherwise appear every time.
    \code{curve_not_rising} \tab at this climate, Nat2 volume reaches half of its maximum before age 10 or does not rise with age; Nat1 may give a more realistic curve \tab yes (Nat2 only) \cr
    \code{young_age} \tab the stand is younger than 10 years or than any fitting plot; predictions are near zero and unreliable \tab no \cr
    \code{long_horizon} \tab one species and climate is predicted over more than 10 years of age (a yield curve); the models were designed for changes over less than 10 years \tab no \cr
-   \code{sensitive_to_climate} \tab 100 degree-days or 100 mm more or less changes volume by more than 15 \% (see \code{\link[=ung_sensitivity]{ung_sensitivity()}}) \tab no \cr
+   \code{sensitive_to_climate} \tab 100 degree-days or 100 mm more or less changes volume by more than 15 \% \tab no \cr
    \code{models_disagree} \tab Nat1 and Nat2 volumes differ by more than 30 \% \tab no \cr
 }
 
@@ -59,5 +58,5 @@ flags <- ung_check(curve, rows = TRUE)
 flags$age[flags$sensitive_to_climate]
 }
 \seealso{
-\code{\link[=ung_volume]{ung_volume()}}, \code{\link[=ung_sensitivity]{ung_sensitivity()}}
+\code{\link[=ung_volume]{ung_volume()}}, \code{\link[=ung_yield_table]{ung_yield_table()}}
 }

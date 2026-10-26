@@ -1,89 +1,7 @@
-#' Uncertainty interval for predicted volume
-#'
-#' Shows how much predicted volume could change because of two sources of
-#' uncertainty: the climate inputs, and the rounding of the published model
-#' parameters. It works by simulation (Monte Carlo). For each stand, `n` pairs
-#' of (`dd0`, `map`) are drawn from a normal distribution centred on the
-#' supplied climate (or, if `dd0` or `map` is omitted, on the average of the
-#' plots used to fit that species' model; see [ung_volume()]). With
-#' `rounding = TRUE`, each draw also uses slightly different parameters (see
-#' below). Volume is predicted for every draw, and the median and a central
-#' interval of the predictions are returned.
-#'
-#' @section Rounding of the parameters:
-#' The authors published every parameter with only 4 decimal places, and the
-#' unrounded values are not available. Volume is the exponential of a sum of
-#' many terms, some of them multiplied by large climate values, so these small
-#' rounding errors add up. With `rounding = TRUE` (the default), each draw
-#' picks every parameter at random within half a unit of its last printed digit
-#' (for example, 0.1234 becomes a value between 0.12335 and 0.12345). The
-#' resulting spread is the volume uncertainty caused by rounding alone. It is
-#' typically a few percent for Nat2 and larger for Nat1 (see *Parameters are
-#' rounded* in [ung_volume()]). Set `rounding = FALSE` to see climate
-#' uncertainty alone.
-#'
-#' **Recommendation:** keep `rounding = TRUE`. The rounding uncertainty is
-#' real and cannot be removed, so leaving it out makes the interval look
-#' narrower than it should be. Use `FALSE` only as a diagnostic: run both and
-#' compare to see how much of the interval comes from climate and how much
-#' from rounding.
-#'
-#' @section What the spread means:
-#' * By default, `dd0` and `map` vary as much as they do across all the fitting
-#'   plots for that species in Canada (`dd0_sd` and `map_sd` in
-#'   [ung_envelope]), so the interval is wide. If you know how uncertain your
-#'   own climate values are, set `sd_dd0` and `sd_map`.
-#' * `median`, `lower` and `upper` summarise the simulated volumes. Each
-#'   simulated volume is already corrected to the average stand (for Nat2, or
-#'   for Nat1 when `nat1_bias_correction = TRUE`), so `median` is the middle of
-#'   the simulations, not the median stand. `volume` is the prediction at the
-#'   climate you supplied with the published parameters.
-#' * Only **climate uncertainty** and **parameter rounding** are included. The
-#'   statistical uncertainty of the fitted parameters is not: standard errors
-#'   exist for Nat1 only, and without the correlations between parameters they
-#'   cannot be combined correctly. Plot-to-plot variation around the models is
-#'   not included either, so the interval is narrower than the range of volumes
-#'   you would see in real stands of that age and climate.
-#' * Draws are **untruncated** normal values, bounded below at 0 because
-#'   degree-days and precipitation cannot be negative. `dd0` and `map` are
-#'   independent unless you set `cor`; their correlation in the fitting data is
-#'   not available.
-#' * `prop_outside` is the share of draws whose climate falls outside the
-#'   fitting-data range of the species (see [ung_envelope]); a large share means
-#'   the fan is largely extrapolation.
-#'
-#' @inheritParams ung_volume
-#' @param n Number of Monte Carlo draws per stand (at least 10). Default 1000.
-#' @param sd_dd0,sd_map Standard deviation of `dd0` (degree-days) and `map` (mm).
-#'   A single number, a vector with one value per stand, or `NULL` (default) to
-#'   use the species SDs from [ung_envelope]. Use 0 to hold a variable fixed.
-#' @param cor Correlation between the `dd0` and `map` draws, in (-1, 1).
-#'   Default 0.
-#' @param interval Central probability of the interval, in (0, 1). Default 0.9
-#'   (5th to 95th percentile).
-#' @param rounding Logical. `TRUE` (default) also varies the parameters within
-#'   their rounding error (see *Rounding of the parameters*).
-#' @param seed Optional integer for reproducible draws. The global random
-#'   number state is restored afterwards.
-#' @param warn Logical. `FALSE` skips the warning and messages of
-#'   [ung_volume()] for the central prediction.
-#'
-#' @return A data.frame of class `ung_uncertainty` with one row per input row
-#'   and model: `row`, `species`, `age`, `dd0`, `map`, `sd_dd0`, `sd_map`,
-#'   `model`, `volume` (m3/ha at the central climate), `median`, `lower`,
-#'   `upper` (m3/ha), and `prop_outside`.
-#' @seealso [ung_volume()], [ung_sensitivity()]
-#' @export
-#' @examples
-#' # Fan across ages for white spruce at a stated climate
-#' f <- ung_uncertainty("white spruce", age = seq(20, 200, by = 20),
-#'                      dd0 = 1800, map = 700, seed = 1)
-#' head(f)
-#' plot(f)
-#'
-#' # Typical-stand fan with a user-supplied climate uncertainty
-#' ung_uncertainty("jack pine", age = 80, sd_dd0 = 100, sd_map = 50, seed = 1)
-ung_uncertainty <- function(species, age, dd0 = NULL, map = NULL,
+# Monte Carlo interval of predicted volume from climate uncertainty and the
+# rounding of the published parameters. Used by ung_yield_table(uncertainty =
+# TRUE); see the *Uncertainty interval* section of ?ung_yield_table.
+.ung_uncertainty <- function(species, age, dd0 = NULL, map = NULL,
                             model = c("both", "Nat1", "Nat2"),
                             n = 1000, sd_dd0 = NULL, sd_map = NULL, cor = 0,
                             interval = 0.9, rounding = TRUE,
@@ -165,7 +83,6 @@ ung_uncertainty <- function(species, age, dd0 = NULL, map = NULL,
   attr(out, "defaulted") <- NULL
   attr(out, "interval") <- interval
   attr(out, "n") <- n
-  class(out) <- c("ung_uncertainty", "data.frame")
   out
 }
 
@@ -197,53 +114,4 @@ ung_uncertainty <- function(species, age, dd0 = NULL, map = NULL,
          "the number of stands.", call. = FALSE)
   }
   rep_len(as.numeric(sd), rows)
-}
-
-#' Plot a climate-uncertainty fan
-#'
-#' Draws the interval of predicted volume against age as a shaded band with the
-#' median as a line, one colour per species/climate combination and one line
-#' type per model.
-#'
-#' @param x An object returned by [ung_uncertainty()].
-#' @param ... Passed to [graphics::plot()].
-#' @return `x`, invisibly.
-#' @export
-#' @examples
-#' f <- ung_uncertainty("white spruce", seq(20, 200, by = 20), dd0 = 1800,
-#'                      map = 700, seed = 1, warn = FALSE)
-#' plot(f)
-plot.ung_uncertainty <- function(x, ...) {
-  info <- .curve_groups(x)
-  grp <- info$group
-  levels_g <- info$levels
-  colors <- grDevices::hcl.colors(max(length(levels_g), 2L), "Dark 3")
-  models <- sort(unique(x$model))
-  lab <- paste0(round(100 * attr(x, "interval")), "% interval")
-
-  yr <- range(c(x$lower, x$upper), na.rm = TRUE, finite = TRUE)
-  graphics::plot(range(x$age, na.rm = TRUE), yr, type = "n",
-                 xlab = "Age (years)", ylab = "Volume (m3/ha)", ...)
-  for (g in seq_along(levels_g)) {
-    for (k in seq_along(models)) {
-      d <- x[grp == levels_g[g] & x$model == models[k], , drop = FALSE]
-      d <- d[order(d$age), , drop = FALSE]
-      ok <- is.finite(d$lower) & is.finite(d$upper)
-      if (sum(ok) > 1L) {
-        d <- d[ok, , drop = FALSE]
-        graphics::polygon(c(d$age, rev(d$age)), c(d$lower, rev(d$upper)),
-                          col = grDevices::adjustcolor(colors[g], 0.25),
-                          border = NA)
-        graphics::lines(d$age, d$median, col = colors[g], lty = k, lwd = 2)
-      }
-    }
-  }
-  graphics::legend("topleft",
-                   legend = c(info$labels, paste(models, "median"), lab),
-                   col = c(colors[seq_along(levels_g)], rep("black", length(models)),
-                           "grey60"),
-                   lty = c(rep(1, length(levels_g)), seq_along(models), NA),
-                   pch = c(rep(NA, length(levels_g) + length(models)), 15),
-                   bty = "n", cex = 0.8)
-  invisible(x)
 }

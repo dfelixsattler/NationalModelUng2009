@@ -67,8 +67,8 @@ diameter at breast height greater than 9 cm.
 Arguments are matched \strong{row by row} and recycled: each must have
 length 1 or the same length as the longest. Species 1 is paired with age
 1, species 2 with age 2, and so on. To predict several species over a range
-of ages, use \code{\link[=ung_curve]{ung_curve()}} or \code{\link[=ung_yield_table]{ung_yield_table()}}, which combine every
-species with every age.
+of ages, use \code{\link[=ung_yield_table]{ung_yield_table()}}, which combines every species with
+every age.
 }
 \section{Which model to use}{
 
@@ -209,8 +209,8 @@ coefficient is moved at random within its rounding interval, predicted
 volume at age 80 and each species' average climate varies by about 9 \%
 (standard deviation) for Nat1, from 4 \% to 16 \% depending on the species
 (tamarack is the worst), and by about 4 \% for Nat2 (at most 9 \%). This is
-in addition to every other source of uncertainty. \code{\link[=ung_uncertainty]{ung_uncertainty()}}
-includes it by default (\code{rounding = TRUE}).
+in addition to every other source of uncertainty. The uncertainty interval
+of \code{\link[=ung_yield_table]{ung_yield_table()}} includes it by default (\code{rounding = TRUE}).
 }
 
 \section{Age 0}{
@@ -290,8 +290,8 @@ two different climates. For example, black spruce uses 2079 degree-days and
 The result is a prediction for a \strong{typical stand of each species}, not for
 any particular site. It is useful for comparing species or sketching a
 curve. For a real stand, supply the climate of its location (see
-\code{\link[=ung_climate]{ung_climate()}}), and use \code{\link[=ung_uncertainty]{ung_uncertainty()}} to see how uncertain the
-prediction is.
+\code{\link[=ung_climate]{ung_climate()}}), and use \code{ung_yield_table(uncertainty = TRUE)} to see how
+uncertain the prediction is.
 }
 
 \examples{
@@ -325,6 +325,6 @@ Duan, N. 1983. Smearing estimate: a nonparametric retransformation method.
 Journal of the American Statistical Association 78: 605-610.
 }
 \seealso{
-\code{\link[=ung_yield_table]{ung_yield_table()}}, \code{\link[=ung_uncertainty]{ung_uncertainty()}}, \code{\link[=ung_check]{ung_check()}},
+\code{\link[=ung_yield_table]{ung_yield_table()}}, \code{\link[=ung_check]{ung_check()}},
 \code{\link[=ung_climate]{ung_climate()}}, \code{\link[=ung_species]{ung_species()}}
 }

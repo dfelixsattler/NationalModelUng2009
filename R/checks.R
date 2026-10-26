@@ -14,7 +14,7 @@
 #' | `curve_not_rising` | at this climate, Nat2 volume reaches half of its maximum before age 10 or does not rise with age; Nat1 may give a more realistic curve | yes (Nat2 only) |
 #' | `young_age` | the stand is younger than 10 years or than any fitting plot; predictions are near zero and unreliable | no |
 #' | `long_horizon` | one species and climate is predicted over more than 10 years of age (a yield curve); the models were designed for changes over less than 10 years | no |
-#' | `sensitive_to_climate` | 100 degree-days or 100 mm more or less changes volume by more than 15 % (see [ung_sensitivity()]) | no |
+#' | `sensitive_to_climate` | 100 degree-days or 100 mm more or less changes volume by more than 15 % | no |
 #' | `models_disagree` | Nat1 and Nat2 volumes differ by more than 30 % | no |
 #'
 #' Age 0 rows are never flagged as young or as `curve_not_rising`: they are
@@ -26,8 +26,7 @@
 #' [ung_envelope].
 #'
 #' @param x A data.frame with columns `species`, `age`, `dd0` and `map`, such
-#'   as the result of [ung_volume()], [ung_curve()], [ung_uncertainty()] or
-#'   [ung_yield_table()] (long format).
+#'   as the result of [ung_volume()] or [ung_yield_table()] (long format).
 #' @param rows Logical. `FALSE` (default) returns one line per check. `TRUE`
 #'   returns one line per row of `x`, with a `TRUE`/`FALSE` column per check.
 #'
@@ -35,7 +34,7 @@
 #'   `rows_flagged`, `rows_total` and `meaning`. With `rows = TRUE`, the
 #'   `species`, `age`, `dd0` and `map` of `x` followed by one logical column per
 #'   check.
-#' @seealso [ung_volume()], [ung_sensitivity()]
+#' @seealso [ung_volume()], [ung_yield_table()]
 #' @export
 #' @examples
 #' curve <- ung_volume("jack pine", age = seq(0, 200, by = 10),
@@ -52,9 +51,6 @@ ung_check <- function(x, rows = FALSE) {
          "`map`, such as the result of ung_volume(). For ung_yield_table(), ",
          "use format = \"long\".", call. = FALSE)
   }
-  # ung_uncertainty() has one row per stand and model: keep one per stand
-  if ("model" %in% names(x)) x <- x[x$model == x$model[1], , drop = FALSE]
-
   correction <- isTRUE(attr(x, "nat1_bias_correction"))
   pred <- ung_volume(x$species, x$age, x$dd0, x$map, model = "both",
                      nat1_bias_correction = correction, warn = FALSE)
@@ -108,7 +104,7 @@ ung_check <- function(x, rows = FALSE) {
   sensitive_to_climate = paste0(
     "100 degree-days or 100 mm more or less changes predicted volume by more ",
     "than ", .sens_threshold, " %; the result is only as good as the climate ",
-    "values (see ung_sensitivity())."),
+    "values."),
   models_disagree = paste0(
     "Nat1 and Nat2 volumes differ by more than ", .model_gap * 100, " %.")
 )

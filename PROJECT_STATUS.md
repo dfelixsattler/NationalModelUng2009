@@ -46,7 +46,7 @@ spreadsheets and CSV files (kept in the untracked `myfiles/` folder).
 * **Parameters are rounded to 4 decimal places in every source** (a few large
   values to 4 significant digits), and the unrounded estimates will not become
   available. The effect is documented prominently (README, `?ung_volume`,
-  `?ung_parameters`) and is included by default in `ung_uncertainty()`
+  `?ung_parameters`) and is included by default in the uncertainty interval of `ung_yield_table()`
   (`rounding = TRUE`). At age 80 and species-mean climate it is about 9 %
   (3 % to 16 %) for Nat1 and about 4 % (up to 9 %) for Nat2, as an SD.
 * **Uncertainty is part of the main workflow** (`ung_yield_table(uncertainty =
@@ -129,19 +129,20 @@ spreadsheets and CSV files (kept in the untracked `myfiles/` folder).
   help page, the README and the vignette. `ung_check()` flags it (`long_horizon`)
   when one species and climate are predicted over ages that span more than 10
   years.
-* `ung_sensitivity()`: percent change in volume for +/- 100 degree-days or
-  +/- 100 mm.
+* Climate sensitivity (internal, used by `ung_check()`): percent change in
+  volume for +/- 100 degree-days or +/- 100 mm.
 * **Defaults for omitted climate:** if `dd0` or `map` is omitted, the package uses,
   for each species, the average `dd0` and average `map` of the plots the authors
   used to fit that species' model (`ung_envelope$dd0_mean`, `$map_mean`), with a
   message. The result is a typical stand of the species, not a site prediction.
-* `ung_uncertainty()`: Monte Carlo uncertainty interval (median and central
-  interval) from climate uncertainty and parameter rounding, with options
-  `rounding` and `nat1_bias_correction`, and a `plot()` method.
-* `ung_curve()`: yield curves for several species (every species at every age).
-  `ung_volume()` matches arguments row by row, so this is a separate function.
-* `plot()` methods for `ung_volume` and `ung_uncertainty` results, with legends
-  that show species, `dd0` and `map`.
+* `ung_yield_table(uncertainty = TRUE)`: Monte Carlo uncertainty interval
+  (`lower`, `upper`) from climate uncertainty and parameter rounding (internal
+  `.ung_uncertainty()`; options passed through `...`).
+* `ung_yield_table()` combines every species with every age (internal
+  `.ung_curve()`); `ung_volume()` matches arguments row by row.
+* `plot()` methods for `ung_volume` and `ung_yield_table` results. The yield
+  table has a `model` column, so Nat1 and Nat2 tables can be combined with
+  `rbind()` and plotted together.
 
 ### Documentation and tests
 
@@ -213,7 +214,7 @@ how the models are used, not what they compute.
 * The per-species fitting envelope, the single warning and `ung_check()`.
 * `ung_yield_table()` for CBM-style tables starting at age 0.
 * The parameter-rounding uncertainty and the optional Nat1 bias correction.
-* `ung_sensitivity()`, which shows how much the volume changes for a 100
+* The `sensitive_to_climate` check of `ung_check()`, which flags how much the volume changes for a 100
   degree-day or 100 mm error in the climate values.
 * Defaults for omitted climate (the average `dd0` and `map` of each species' fitting
   plots), with a message, for comparing species.
@@ -285,14 +286,14 @@ Resolved on 2026-10-22:
 | --- | --- |
 | `R/ung_volume.R` | `ung_volume()`, input checks, the equations (`.predict`), the main documentation of model choice, rounding, Duan factor, climate names |
 | `R/ung_yield_table.R` | `ung_yield_table()` (long and wide CBM-style tables) |
-| `R/ung_curve.R` | `ung_curve()` |
+| `R/ung_curve.R` | `.ung_curve()` (internal: every species at every age) |
 | `R/checks.R` | `ung_check()`, the single warning, thresholds |
 | `R/calibration.R` | Envelope lookup and the warning helper |
-| `R/ung_sensitivity.R` | `ung_sensitivity()` |
-| `R/ung_uncertainty.R` | `ung_uncertainty()`, the rounding draws, and its plot method |
-| `R/ung_climate.R` | `ung_climate()` (climr), `ung_climate_from_climatena()`, the `dd0` derivation |
-| `R/plot.R` | `plot.ung_volume()` |
-| `R/data.R` | Documentation and provenance of `ung_parameters` and `ung_envelope` |
+| `R/ung_sensitivity.R` | `.ung_sensitivity()` (internal, used by `ung_check()`) |
+| `R/ung_uncertainty.R` | `.ung_uncertainty()` (internal) and the rounding draws |
+| `R/ung_climate.R` | `ung_climate()` (climr or ClimateNA), `ung_climate_from_climatena()`, the `dd0` derivation |
+| `R/plot.R` | `plot.ung_volume()`, `plot.ung_yield_table()` |
+| `R/data.R` | Documentation and provenance of `ung_parameters`, `ung_envelope`, `example_stands` and `example_climate` |
 | `data/`, `data-raw/` | Datasets and the scripts that build them (they read the untracked `myfiles/`) |
 | `vignettes/ung-workflow.Rmd` | Worked example |
 | `tests/testthat/` | Tests |

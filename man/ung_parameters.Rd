@@ -43,6 +43,6 @@ own; they are \strong{not} used here.
 large values with 4 significant digits), and the unrounded estimates are not
 available. This rounding alone makes predicted volume uncertain by a few
 percent; see \emph{Parameters are rounded} in \code{\link[=ung_volume]{ung_volume()}} and
-\code{\link[=ung_uncertainty]{ung_uncertainty()}}.
+the uncertainty interval of \code{\link[=ung_yield_table]{ung_yield_table()}}.
 }
 \keyword{datasets}

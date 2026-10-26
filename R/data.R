@@ -15,7 +15,7 @@
 #' large values with 4 significant digits), and the unrounded estimates are not
 #' available. This rounding alone makes predicted volume uncertain by a few
 #' percent; see *Parameters are rounded* in [ung_volume()] and
-#' [ung_uncertainty()].
+#' the uncertainty interval of [ung_yield_table()].
 #'
 #' @format A data.frame with 25 rows and 26 columns:
 #' \describe{
@@ -56,3 +56,27 @@
 #' @source Table 2 of Ung et al. (2009) and the developers' spreadsheet
 #'   (`DATASUMMARY` sheet); built by `data-raw/build_envelope.R`.
 "ung_envelope"
+
+#' Example stands
+#'
+#' Ten made-up stands used in the vignette (`vignette("ung-workflow")`). Each
+#' stand has a location and up to three species.
+#'
+#' @format A data.frame with 10 rows: `stand_id`, `lat` and `lon` (decimal
+#'   degrees), `elev` (metres) and `sp1`, `sp2`, `sp3` (species common names
+#'   accepted by the package; `NA` when the stand has fewer species).
+#' @source Invented for illustration; built by
+#'   `data-raw/build_example_stands.R`.
+"example_stands"
+
+#' Climate of the example stands
+#'
+#' Degree-days above 0 degrees C (`dd0`) and mean annual precipitation (`map`,
+#' mm) for [example_stands], as returned by
+#' `ung_climate(source = "climatena")` with ClimateNA v7.60 (1981-2010
+#' averages), rounded to whole numbers.
+#'
+#' @format A data.frame with 10 rows: `id` (the `stand_id` of
+#'   [example_stands]), `dd0` and `map`.
+#' @source ClimateNA v7.60; built by `data-raw/build_example_stands.R`.
+"example_climate"

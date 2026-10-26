@@ -69,7 +69,7 @@ test_that("a Nat2 curve that barely rises with age is flagged and warned", {
   expect_warning(ung_volume("PSEU.MEN", 50, 2617, 506, model = "Nat2"),
                  "Nat2 volume reaches half", class = "ung2009_warning")
   expect_no_warning(ung_volume("PSEU.MEN", 50, 2617, 506, model = "Nat1"))
-  ck <- ung_check(ung_curve("PSEU.MEN", c(0, 50, 100), 2617, 506,
+  ck <- ung_check(.ung_curve("PSEU.MEN", c(0, 50, 100), 2617, 506,
                             model = "Nat2", warn = FALSE))
   expect_equal(ck$rows_flagged[ck$check == "curve_not_rising"], 2)
 })
@@ -86,18 +86,18 @@ test_that("fitting-data envelope is per species and internally consistent", {
 })
 
 test_that("ung_curve combines every species with every age", {
-  d <- ung_curve(c("black spruce", "Douglas-fir"), age = 10:80, warn = FALSE)
+  d <- .ung_curve(c("black spruce", "Douglas-fir"), age = 10:80, warn = FALSE)
   expect_s3_class(d, "ung_volume")
   expect_equal(nrow(d), 2 * 71)
   expect_equal(unique(d$species), c("PICE.MAR", "PSEU.MEN"))
   # species mean climate, different for each species
   expect_equal(length(unique(d$dd0)), 2)
-  expect_equal(nrow(ung_curve("white spruce", 10:20, 2200, 600, warn = FALSE)), 11)
-  expect_error(ung_curve(c("white spruce", "jack pine"), 10:20, dd0 = 1:3),
+  expect_equal(nrow(.ung_curve("white spruce", 10:20, 2200, 600, warn = FALSE)), 11)
+  expect_error(.ung_curve(c("white spruce", "jack pine"), 10:20, dd0 = 1:3),
                "one value per species")
-  # ung_volume matches row by row and the error points to ung_curve()
+  # ung_volume matches row by row and the error points to ung_yield_table()
   expect_error(ung_volume(c("black spruce", "Douglas-fir"), age = 10:80),
-               "ung_curve")
+               "ung_yield_table")
   expect_silent(plot(d))
 })
 
@@ -116,7 +116,7 @@ test_that("ung_volume gives at most one warning, naming only actionable problems
   expect_match(w, "older than", fixed = TRUE)
   expect_match(w, "ung_check()", fixed = TRUE)
   # A normal yield curve inside the data gives no warning at all
-  expect_no_warning(ung_curve("PICE.MAR", seq(0, 150, by = 10), 2079, 965))
+  expect_no_warning(.ung_curve("PICE.MAR", seq(0, 150, by = 10), 2079, 965))
   expect_no_warning(ung_volume("POPU.TRE", 300, 2200, 750, warn = FALSE))
 })
 
@@ -142,12 +142,12 @@ test_that("ung_check lists every check and flags the right rows", {
 })
 
 test_that("sensitivity table has the documented structure and values", {
-  s <- ung_sensitivity("THUJ.OCC", 80, 2100, 800)
+  s <- .ung_sensitivity("THUJ.OCC", 80, 2100, 800)
   expect_equal(s$model, c("Nat1", "Nat2"))
   expect_equal(s$max_change_pct, pmax(s$dd0_change_pct, s$map_change_pct))
   expect_gt(s$max_change_pct[s$model == "Nat1"], 15)
   # Near-empty stands give NA rather than a meaningless relative change
-  expect_true(is.na(ung_sensitivity("POPU.TRE", 1, 2200, 750, model = "Nat2")$max_change_pct))
+  expect_true(is.na(.ung_sensitivity("POPU.TRE", 1, 2200, 750, model = "Nat2")$max_change_pct))
 })
 
 test_that("plot method runs for one and several curves", {
@@ -158,30 +158,33 @@ test_that("plot method runs for one and several curves", {
   expect_no_error(plot(d))
   expect_error(plot(ung_volume("PICE.MAR", 50, 2000, 800, model = "Nat2", warn = FALSE), what = "H"),
                "no H predictions")
-  expect_no_error(plot(ung_curve("PICE.MAR", 0:100, 2000, 800, warn = FALSE), what = "G"))
+  expect_no_error(plot(.ung_curve("PICE.MAR", 0:100, 2000, 800, warn = FALSE), what = "G"))
 })
 
 test_that("ung_yield_table gives a simple long or wide table, Nat2 by default", {
-  # Default ages run to 250, past the oldest fitted black spruce plot
-  expect_warning(tab <- ung_yield_table("PICE.MAR", dd0 = 2079, map = 965),
+  expect_equal(ung_yield_table("PICE.MAR", dd0 = 2079, map = 965, warn = FALSE)$age,
+               seq(0, 150, by = 10))
+  # Ages to 250 go past the oldest fitted black spruce plot
+  expect_warning(tab <- ung_yield_table("PICE.MAR", age = seq(0, 250, by = 10),
+                                        dd0 = 2079, map = 965),
                  "older than")
-  expect_named(tab, c("species", "dd0", "map", "age", "volume"))
-  expect_equal(tab$age, seq(0, 250, by = 10))
+  expect_s3_class(tab, "ung_yield_table")
+  expect_named(tab, c("species", "model", "dd0", "map", "age", "volume"))
   expect_equal(tab$volume[1], 0)
-  expect_equal(attr(tab, "model"), "Nat2")
-  expect_equal(tab$volume, ung_curve("PICE.MAR", seq(0, 250, by = 10), 2079, 965,
+  expect_equal(unique(tab$model), "Nat2")
+  expect_equal(tab$volume, .ung_curve("PICE.MAR", seq(0, 250, by = 10), 2079, 965,
                                      model = "Nat2", warn = FALSE)$V_Nat2)
 
   w <- ung_yield_table(c("PICE.MAR", "PINU.BAN", "PICE.MAR"), age = c(0, 50, 100),
                        dd0 = c(2079, 2179, 1800), map = c(965, 772, 600),
                        model = "Nat1", format = "wide", warn = FALSE)
   expect_equal(nrow(w), 3)
-  expect_named(w, c("species", "dd0", "map", "vol_0", "vol_50", "vol_100"))
+  expect_named(w, c("species", "model", "dd0", "map", "vol_0", "vol_50", "vol_100"))
   expect_equal(w$vol_50[2], ung_volume("PINU.BAN", 50, 2179, 772, warn = FALSE)$V_Nat1)
 
   u <- ung_yield_table("PINU.BAN", age = c(0, 60), dd0 = 2179, map = 772,
                        uncertainty = TRUE, n = 50, seed = 1, warn = FALSE)
-  expect_named(u, c("species", "dd0", "map", "age", "volume", "lower", "upper"))
+  expect_named(u, c("species", "model", "dd0", "map", "age", "volume", "lower", "upper"))
   expect_true(all(u$lower <= u$upper))
   uw <- ung_yield_table("PINU.BAN", age = c(0, 60), dd0 = 2179, map = 772,
                         uncertainty = TRUE, format = "wide", n = 50, seed = 1,

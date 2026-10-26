@@ -37,7 +37,7 @@
 #' in [ung_volume()] for what this means). That is not the same product or
 #' period as the climr or ClimateNA values. Expect some differences in `dd0`
 #' and `map`; because predicted volume can be sensitive to climate (see
-#' [ung_sensitivity()]), they can matter.
+#' [ung_check()]), they can matter.
 #' Do not use future-climate projections: the authors state the climate terms
 #' are descriptive only and not suitable for climate-change impact projection.
 #'

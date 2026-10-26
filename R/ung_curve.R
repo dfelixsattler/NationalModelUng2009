@@ -1,37 +1,6 @@
-#' Yield curves for one or more species
-#'
-#' Predicts volume for every combination of the given species and ages. This is
-#' the simplest way to draw yield curves: [ung_volume()] matches its arguments
-#' row by row, so `ung_volume(c("black spruce", "Douglas-fir"), 10:80)` is an
-#' error (two species, 71 ages), whereas `ung_curve()` returns 71 ages for each
-#' species.
-#'
-#' @inheritParams ung_volume
-#' @param species Character vector of species (common name, scientific name or
-#'   code; see [ung_species()]).
-#' @param age Numeric vector of ages (years). Default `10:150`.
-#' @param dd0,map Climate for each species: `NULL` (default; each species uses
-#'   the average `dd0` and `map` of the plots used to fit its model, see
-#'   [ung_volume()]), one value used for every species, or one value
-#'   per species.
-#'
-#' @details A yield curve covers more than 10 years of age, which is longer than
-#'   the authors designed the models for (see *Intended use and time horizon*
-#'   in [ung_volume()]). This and the other cautions can be listed with
-#'   [ung_check()]. For a simple table of age and volume, for example for the
-#'   Carbon Budget Model, use [ung_yield_table()].
-#'
-#' @return A data.frame of class `ung_volume` (see [ung_volume()]) with one row
-#'   per species and age. Use [plot()] to draw it.
-#' @seealso [ung_yield_table()], [ung_volume()], [ung_uncertainty()]
-#' @export
-#' @examples
-#' curves <- ung_curve(c("black spruce", "Douglas-fir"), age = 10:150)
-#' plot(curves)
-#'
-#' # One climate for every species
-#' plot(ung_curve(c("white spruce", "jack pine"), dd0 = 2200, map = 600))
-ung_curve <- function(species, age = 10:150, dd0 = NULL, map = NULL,
+# Predict every species at every age (all ages of species 1, then species 2,
+# and so on). Used by ung_yield_table().
+.ung_curve <- function(species, age, dd0 = NULL, map = NULL,
                       model = c("both", "Nat1", "Nat2"),
                       nat1_bias_correction = FALSE, warn = TRUE) {
   model <- match.arg(model)

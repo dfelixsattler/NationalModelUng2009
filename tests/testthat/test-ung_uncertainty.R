@@ -17,8 +17,8 @@ test_that("species-mean climate is used when dd0 and map are omitted", {
 })
 
 test_that("ung_uncertainty returns a reproducible, ordered fan", {
-  a <- ung_uncertainty("PICE.MAR", c(40, 80), 2000, 900, n = 200, seed = 1, warn = FALSE)
-  b <- ung_uncertainty("PICE.MAR", c(40, 80), 2000, 900, n = 200, seed = 1, warn = FALSE)
+  a <- .ung_uncertainty("PICE.MAR", c(40, 80), 2000, 900, n = 200, seed = 1, warn = FALSE)
+  b <- .ung_uncertainty("PICE.MAR", c(40, 80), 2000, 900, n = 200, seed = 1, warn = FALSE)
   expect_equal(a, b)
   expect_equal(nrow(a), 4)
   expect_equal(a$model, rep(c("Nat1", "Nat2"), 2))
@@ -30,45 +30,57 @@ test_that("ung_uncertainty returns a reproducible, ordered fan", {
 })
 
 test_that("zero SD collapses the fan; larger SD widens it; seed is restored", {
-  z <- ung_uncertainty("PINU.BAN", 80, 2200, 800, n = 50, sd_dd0 = 0, sd_map = 0,
+  z <- .ung_uncertainty("PINU.BAN", 80, 2200, 800, n = 50, sd_dd0 = 0, sd_map = 0,
                        rounding = FALSE, seed = 2, warn = FALSE)
   expect_equal(z$lower, z$volume)
   expect_equal(z$upper, z$volume)
   # Rounding alone gives a small but non-zero spread around the central value
-  r <- ung_uncertainty("PINU.BAN", 80, 2200, 800, n = 500, sd_dd0 = 0, sd_map = 0,
+  r <- .ung_uncertainty("PINU.BAN", 80, 2200, 800, n = 500, sd_dd0 = 0, sd_map = 0,
                        seed = 2, warn = FALSE)
   expect_true(all(r$upper > r$lower))
   expect_true(all(r$lower < r$volume & r$volume < r$upper))
   expect_true(all((r$upper - r$lower) / r$volume < 0.5))
-  narrow <- ung_uncertainty("PINU.BAN", 80, 2200, 800, n = 500, sd_dd0 = 20, sd_map = 20,
+  narrow <- .ung_uncertainty("PINU.BAN", 80, 2200, 800, n = 500, sd_dd0 = 20, sd_map = 20,
                             seed = 2, warn = FALSE)
-  wide <- ung_uncertainty("PINU.BAN", 80, 2200, 800, n = 500, sd_dd0 = 200, sd_map = 200,
+  wide <- .ung_uncertainty("PINU.BAN", 80, 2200, 800, n = 500, sd_dd0 = 200, sd_map = 200,
                           seed = 2, warn = FALSE)
   expect_gt(wide$upper[1] - wide$lower[1], narrow$upper[1] - narrow$lower[1])
 
   set.seed(99); r1 <- runif(1)
   set.seed(99)
-  ung_uncertainty("PINU.BAN", 80, 2200, 800, n = 20, seed = 5, warn = FALSE)
+  .ung_uncertainty("PINU.BAN", 80, 2200, 800, n = 20, seed = 5, warn = FALSE)
   expect_equal(runif(1), r1)
 })
 
 test_that("ung_uncertainty uses species-mean climate and SDs by default, and validates", {
   e <- ung_envelope[ung_envelope$species == "POPU.TRE", ]
-  f <- suppressMessages(ung_uncertainty("POPU.TRE", 60, n = 50, seed = 3, model = "Nat2"))
+  f <- suppressMessages(.ung_uncertainty("POPU.TRE", 60, n = 50, seed = 3, model = "Nat2"))
   expect_equal(f$dd0, e$dd0_mean)
   expect_equal(f$sd_dd0, e$dd0_sd)
   expect_equal(f$sd_map, e$map_sd)
-  expect_error(ung_uncertainty("POPU.TRE", 60, n = 5), "`n`")
-  expect_error(ung_uncertainty("POPU.TRE", 60, cor = 1), "`cor`")
-  expect_error(ung_uncertainty("POPU.TRE", 60, interval = 1), "`interval`")
-  expect_error(ung_uncertainty("POPU.TRE", c(60, 70), sd_dd0 = c(1, 2, 3)), "`sd_dd0`")
-  expect_error(ung_uncertainty("POPU.TRE", 60, sd_map = -1), "`sd_map`")
+  expect_error(.ung_uncertainty("POPU.TRE", 60, n = 5), "`n`")
+  expect_error(.ung_uncertainty("POPU.TRE", 60, cor = 1), "`cor`")
+  expect_error(.ung_uncertainty("POPU.TRE", 60, interval = 1), "`interval`")
+  expect_error(.ung_uncertainty("POPU.TRE", c(60, 70), sd_dd0 = c(1, 2, 3)), "`sd_dd0`")
+  expect_error(.ung_uncertainty("POPU.TRE", 60, sd_map = -1), "`sd_map`")
 })
 
-test_that("plot method for the uncertainty fan runs", {
-  f <- ung_uncertainty(rep(c("PICE.MAR", "PINU.BAN"), 3), rep(c(20, 60, 100), each = 2),
-                       2100, 800, n = 50, seed = 1, warn = FALSE)
+test_that("plot() draws yield tables, with a band and with two models", {
+  u <- ung_yield_table("PINU.BAN", age = seq(0, 100, by = 20), dd0 = 2100,
+                       map = 800, id = "S1", uncertainty = TRUE, n = 50,
+                       seed = 1, warn = FALSE)
+  n1 <- ung_yield_table("PINU.BAN", age = seq(0, 100, by = 20), dd0 = 2100,
+                        map = 800, model = "Nat1", warn = FALSE)
+  n2 <- ung_yield_table("PINU.BAN", age = seq(0, 100, by = 20), dd0 = 2100,
+                        map = 800, warn = FALSE)
+  both <- rbind(n1, n2)
+  expect_s3_class(both, "ung_yield_table")
+  expect_s3_class(both[both$age > 0, ], "ung_yield_table")
   pdf(NULL)
   on.exit(dev.off())
-  expect_no_error(plot(f))
+  expect_no_error(plot(u))
+  expect_no_error(plot(both))
+  w <- ung_yield_table("PINU.BAN", dd0 = 2100, map = 800, format = "wide",
+                       warn = FALSE)
+  expect_error(plot(w), "long")
 })

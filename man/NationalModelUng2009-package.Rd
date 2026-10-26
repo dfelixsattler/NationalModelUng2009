@@ -11,9 +11,12 @@ Implements the two national growth-and-yield models of Ung, Bernier, Guo and Lam
 \details{
 Main functions:
 \itemize{
-\item \code{\link[=ung_volume]{ung_volume()}} predicts height, basal area and volume.
-\item \code{\link[=ung_sensitivity]{ung_sensitivity()}} shows how strongly volume reacts to small climate changes.
-\item \code{\link[=ung_climate]{ung_climate()}} looks up degree-days and precipitation with \code{climr}.
+\item \code{\link[=ung_yield_table]{ung_yield_table()}} makes tables of volume by age (yield curves), for
+example for the Carbon Budget Model, and plots them.
+\item \code{\link[=ung_volume]{ung_volume()}} predicts height, basal area and volume, row by row.
+\item \code{\link[=ung_check]{ung_check()}} lists the cautions that apply to a set of predictions.
+\item \code{\link[=ung_climate]{ung_climate()}} looks up degree-days and precipitation with climr or
+ClimateNA.
 \item \code{\link[=ung_species]{ung_species()}} lists the 25 supported species.
 }
 }

@@ -20,72 +20,38 @@ This workflow predicts gross merchantable volume in cubic metres per hectare
 volume is the volume of live trees larger than 9 cm in diameter at breast
 height.
 
-The example starts where many users start: a file of stand locations with
+The example starts with a file of stand locations with
 their leading species. It ends with one yield curve, from age 0 to 200, for
 each species in each stand.
 
-## 1. Read the stands
+## 1. The stands
 
 The package includes a small made-up file of 10 stands. Each stand has an
 identifier, a location (latitude, longitude and elevation in metres) and up to
-three leading species, written as short inventory codes. Most stands have one
-species; two have two species and one has three.
+three species.
 
 ```{r stands}
-stands <- read.csv(
-  system.file("extdata", "example_stands.csv", package = "NationalModelUng2009"),
-  na.strings = ""
-)
+stands <- example_stands
 stands
 ```
 
 ## 2. One row per stand and species
 
-Each species in a stand gets its own curve, because the models were fitted to
-stands where one species made up most of the basal area. Stack the three
-species columns into one, then drop the empty ones.
+Each species in a stand needs to get its own curve. Therefore, convert the
+stands table from wide to long, removing empty entries.
 
 ```{r stack}
 curves <- rbind(
-  data.frame(stand_id = stands$stand_id, code = stands$sp1),
-  data.frame(stand_id = stands$stand_id, code = stands$sp2),
-  data.frame(stand_id = stands$stand_id, code = stands$sp3)
+  data.frame(stand_id = stands$stand_id, species = stands$sp1),
+  data.frame(stand_id = stands$stand_id, species = stands$sp2),
+  data.frame(stand_id = stands$stand_id, species = stands$sp3)
 )
-curves <- curves[!is.na(curves$code), ]
+curves <- curves[!is.na(curves$species), ]
 curves <- curves[order(curves$stand_id), ]
-nrow(curves)
+curves
 ```
 
-There are 15 curves to make.
-
-## 3. Translate species codes into accepted names
-
-The package accepts a species by its common name, scientific name or package
-code. `ung_species()` lists them.
-
-```{r species-list}
-head(ung_species())
-```
-
-Inventory codes are not accepted, so make a small lookup table that gives the
-common name for each code you use.
-
-```{r species-lookup}
-lookup <- data.frame(
-  code = c("SB", "PJ", "BF", "RS", "BW", "PW", "PR", "PL", "HW", "FD", "AW"),
-  species = c("black spruce", "jack pine", "balsam fir", "red spruce",
-              "white birch", "eastern white pine", "red pine",
-              "lodgepole pine", "western hemlock", "Douglas-fir",
-              "trembling aspen")
-)
-curves$species <- lookup$species[match(curves$code, lookup$code)]
-
-# Every code must have a name, and every name must be accepted
-stopifnot(!anyNA(curves$species),
-          all(curves$species %in% ung_species()$common))
-```
-
-## 4. Get the climate for each stand
+## 3. Get the climate for each stand
 
 The models need two climate values for each stand:
 
@@ -93,14 +59,12 @@ The models need two climate values for each stand:
   above 0 °C);
 - `map`: mean annual precipitation in millimetres.
 
-Use **averages over a 30-year period** (climate normals, such as 1981–2010),
-not the values of one year. The models were fitted with one long-term climate
-for each plot. Those values describe where a stand grows, not the weather of
-a given year. One unusual year would move the whole curve.
+It is recommended that **averages over multiple years be used** (e.g., climate
+normals, such as 1981–2010), and not the values of one year. The models were
+fitted with one long-term climate for each plot. Those values describe where a
+stand grows, not the weather of a given year.
 
-Two programs can provide these values. Both are run for 1981–2010 averages
-below. They need a network connection or a local install, so the code is not
-run here.
+The package includes options to obtain climate data.
 
 **Option A: climr (in R).** `ung_climate()` uses the climr package. climr
 downloads climate maps the first time an area is requested (this can take
@@ -123,31 +87,23 @@ climate <- ung_climate(lon = stands$lon, lat = stands$lat,
                        exe = "C:/ClimateNA_v760/ClimateNA_v7.60.exe")
 ```
 
-For another period, give the years to average, for example
-`years = 2010:2019`. This works with both options.
+The default for both options above is 1981–2010. For another period, give the
+years to average, for example `years = 2010:2019`. This works with both
+options.
 
 If you already have `dd0` and `map` from another source, skip this step and
-add them to `curves` yourself. If you ran ClimateNA yourself, convert its
-output with `ung_climate_from_climatena()`.
+add them to `curves` yourself.
 
-Neither program reports `dd0` directly. Both functions calculate it from
-three other degree-day variables (see `?ung_climate`). Do not use ClimateNA's
-`DD5` (degree-days above 5 °C) or `DD_0` (degree-days *below* 0 °C) as `dd0`.
-
-The package includes the results of both options for the example stands.
-This example uses the climr values.
+The package includes the results of the ClimateNA option. It is used in this
+example.
 
 ```{r climate-example}
-climate <- read.csv(
-  system.file("extdata", "example_climate_climr.csv",
-              package = "NationalModelUng2009")
-)
-# The ClimateNA values are in "example_climate_climatena.csv"
+climate <- example_climate
 curves <- merge(curves, climate, by.x = "stand_id", by.y = "id")
 curves
 ```
 
-## 5. Make the yield tables
+## 4. Make the yield tables
 
 `ung_yield_table()` makes all the curves in one call. Give it one value of
 `species`, `dd0` and `map` per curve, and the ages you want. The `id`
@@ -162,14 +118,14 @@ head(yield)
 ```
 
 The result is in long format: one row per curve and age, with columns `id`,
-`species` (the package code, such as `PINU.BAN` for jack pine), `dd0`, `map`,
-`age` and `volume`. Age 0 always has volume 0.
+`species` (the package code, such as `PINU.BAN` for jack pine), `model`, `dd0`,
+`map`, `age` and `volume`. Age 0 always has volume 0.
 
 The default model is Nat2 (see "Which model to use" in `?ung_volume`).
 
 The warning above is a single summary for the whole call. Here it says that
 some curves go beyond the oldest stands in the data used to fit the models.
-Step 7 shows which rows are affected.
+Step 6 shows which rows are affected.
 
 CBM users may prefer the wide format, with one row per curve and one volume
 column per age (`vol_0`, `vol_10`, ...). Add `format = "wide"` to the same
@@ -183,7 +139,7 @@ yield_wide <- ung_yield_table(curves$species, age = ages,
 yield_wide[, 1:8]
 ```
 
-## 6. Add an uncertainty interval
+## 5. Add an uncertainty interval
 
 Add `uncertainty = TRUE` to get `lower` and `upper` columns. They hold the
 central 90 % interval of many simulated volumes. `seed` makes the random
@@ -209,9 +165,15 @@ The interval includes two sources of uncertainty:
 
 It does **not** include the uncertainty of the fitted parameters or the
 variation of real stands around the model, so real stands vary more than the
-interval shows. See `?ung_uncertainty` for details and a plot.
+interval shows. See `?ung_yield_table` for details.
 
-## 7. List all cautions with `ung_check()`
+`plot()` draws the interval as a shaded band around the curve.
+
+```{r plot-uncertainty}
+plot(yield_unc[yield_unc$id == "S01", ])
+```
+
+## 6. List all cautions with `ung_check()`
 
 `ung_check()` runs every check the package knows about and explains how many
 rows each one affects.
@@ -220,7 +182,7 @@ rows each one affects.
 ung_check(yield)
 ```
 
-The first five checks are the kinds that can trigger the warning in step 5.
+The first five checks are the kinds that can trigger the warning in step 4.
 The others apply to almost every yield curve, so they are listed here rather
 than given as warnings. `ung_check()` always calculates both Nat1 and Nat2,
 so it can flag rows the warning did not mention: here, `output_beyond_data`
@@ -235,31 +197,15 @@ old <- yield[flags$older_than_data, ]
 table(old$id, old$species)
 ```
 
-## 8. Plot the curves
+## 7. Plot the curves
 
 `plot()` draws one line per curve. Here are the three black spruce stands.
 
 ```{r plot}
-bs <- curves[curves$species == "black spruce", ]
-plot(ung_curve(bs$species, age = ages, dd0 = bs$dd0, map = bs$map,
-               warn = FALSE))
+plot(yield[yield$species == "PICE.MAR", ])
 ```
 
-The two Douglas-fir stands show a weakness of Nat2 in dry places. At stand
-S10, the Nat2 curve (dashed) reaches 85 m3/ha by age 10 and then rises
-slowly, which is not realistic. This comes from the published Nat2 equation:
-its climate terms control how fast volume rises with age. Nat1 (solid) rises
-gradually, so consider Nat1 for such stands. With the slightly drier
-ClimateNA climate for S10, the Nat2 curve is even flatter, and the warning
-and `ung_check()` report it as `curve_not_rising`.
-
-```{r plot-fd}
-fd <- curves[curves$species == "Douglas-fir", ]
-plot(ung_curve(fd$species, age = ages, dd0 = fd$dd0, map = fd$map,
-               model = "both", nat1_bias_correction = TRUE, warn = FALSE))
-```
-
-## 9. Compare Nat1 and Nat2
+## 8. Compare Nat1 and Nat2
 
 Nat2 predicts volume directly. Nat1 first predicts dominant height and basal
 area `G`, then calculates volume from them. The published Nat1 is biased low;
@@ -269,35 +215,38 @@ was added by this package and is not part of the published model.
 
 ```{r compare-models}
 s02 <- curves[curves$stand_id == "S02", ]
-both <- ung_curve(s02$species, age = ages, dd0 = s02$dd0, map = s02$map,
-                  model = "both", warn = FALSE)
-both_corrected <- ung_curve(s02$species, age = ages, dd0 = s02$dd0,
-                            map = s02$map, model = "both",
-                            nat1_bias_correction = TRUE, warn = FALSE)
-data.frame(age = both$age,
-           Nat1 = both$V_Nat1,
-           Nat1_corrected = both_corrected$V_Nat1,
-           Nat2 = both$V_Nat2)[both$age %in% c(40, 80, 120), ]
-plot(both_corrected)
+nat2 <- ung_yield_table(s02$species, age = ages, dd0 = s02$dd0,
+                        map = s02$map, warn = FALSE)
+nat1 <- ung_yield_table(s02$species, age = ages, dd0 = s02$dd0,
+                        map = s02$map, model = "Nat1", warn = FALSE)
+nat1_corrected <- ung_yield_table(s02$species, age = ages, dd0 = s02$dd0,
+                                  map = s02$map, model = "Nat1",
+                                  nat1_bias_correction = TRUE, warn = FALSE)
+data.frame(age = nat2$age,
+           Nat1 = nat1$volume,
+           Nat1_corrected = nat1_corrected$volume,
+           Nat2 = nat2$volume)[nat2$age %in% c(40, 80, 120), ]
+```
+
+The two Douglas-fir stands show a weakness of Nat2 in dry places. At stand
+S10, the Nat2 curve (solid) jumps to about 170 m3/ha by age 10 and then
+hardly rises, which is not realistic. This comes from the published Nat2
+equation: its climate terms control how fast volume rises with age.
+`ung_check()` reports it as `curve_not_rising` (step 6). Nat1 (dashed) rises
+gradually, so consider Nat1 for such stands. To draw both models on one plot,
+combine the two tables with `rbind()`.
+
+```{r plot-fd}
+fd <- curves[curves$species == "Douglas-fir", ]
+fd_nat1 <- ung_yield_table(fd$species, age = ages, dd0 = fd$dd0,
+                           map = fd$map, id = fd$stand_id, model = "Nat1",
+                           nat1_bias_correction = TRUE, warn = FALSE)
+plot(rbind(yield[yield$species == "PSEU.MEN", ], fd_nat1))
 ```
 
 To use Nat1 in a yield table, add `model = "Nat1"` and, usually,
 `nat1_bias_correction = TRUE` to `ung_yield_table()`.
-
-## 10. Test climate sensitivity
-
-`ung_sensitivity()` raises and lowers `dd0` and `map` by 100 and reports the
-largest percentage change in volume. A large change means the curve depends
-strongly on getting the climate right.
-
-```{r sensitivity}
-sens <- ung_sensitivity(curves$species, age = 80, dd0 = curves$dd0,
-                        map = curves$map, model = "Nat2")
-cbind(stand_id = curves$stand_id[sens$row],
-      sens[, c("species", "volume", "max_change_pct")])
-```
-
-## 11. Save the yield tables
+## 9. Save the yield tables
 
 ```{r save, eval = FALSE}
 write.csv(yield, "yield_long.csv", row.names = FALSE)
