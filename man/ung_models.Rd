@@ -86,18 +86,14 @@ number a little above 1, worked out by the authors from the scatter of their
 data around each equation, that is multiplied onto the converted value so
 that it estimates the average. More scatter gives a larger factor: for black
 spruce it is 1.02 for height, 1.32 for basal area, 1.001 for Nat1 volume and
-1.15 for Nat2 volume.
+1.15 for Nat2 volume. The package applies these factors to volume only.
 }
 
 \section{How Nat1 calculates volume}{
 
-The Nat1 volume equation is given the predicted \emph{logarithms} of height and
-basal area, before their Duan factors are applied. It is not given the
-logarithms of the reported height \code{H} and basal area \code{G}, which already include
-their Duan factors. This is how the authors fitted and wrote the system (in
-their file \verb{system equations.xls}) and is what the earlier R scripts do. It
-is important: using the corrected height and basal area instead would raise
-volume by \code{CDh^v2 * CDg^v3}, about a third for black spruce.
+The Nat1 volume equation uses the predicted height and basal area. \code{H} and
+\code{G} (from \code{include_hg = TRUE}) are reported without their Duan factors, so
+they are the same values the volume equation uses.
 }
 
 \section{Why Nat1 volume needs a correction}{
@@ -231,7 +227,7 @@ The result is a prediction for a \strong{typical stand of each species}, not for
 any particular site. It is useful for comparing species or sketching a
 curve. For a real stand, supply the climate of its location (see
 \code{\link[=ung_climate]{ung_climate()}}), and use \code{ung_yield_table(uncertainty = TRUE)} to see how
-uncertain the prediction is.
+much the prediction changes with climate.
 }
 
 \references{

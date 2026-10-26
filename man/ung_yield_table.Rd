@@ -49,17 +49,16 @@ bias of Nat1 volume; see \emph{Why Nat1 volume needs a correction} in
 
 \item{include_hg}{Logical. For Nat1 only: \code{TRUE} adds the columns \code{H}
 (dominant height, m) and \code{G} (basal area, m2/ha) that Nat1 predicts on
-the way to volume. Long format only. Default \code{FALSE}.}
+the way to volume, without their Duan factors. Long format only. Default
+\code{FALSE}.}
 
 \item{uncertainty}{Logical. \code{TRUE} adds \code{lower} and \code{upper} columns (see
 \emph{Uncertainty interval}). Default \code{FALSE}.}
 
-\item{sd_dd0, sd_map}{Used only when \code{uncertainty = TRUE}. How much \code{dd0}
-(degree-days) and \code{map} (mm) vary in the simulations, as a standard
-deviation: one value, or one value per element of \code{species}. For example,
-\code{sd_dd0 = 100} if your \code{dd0} could be about 100 degree-days off. \code{0}
-keeps that variable fixed. Default \code{NULL}: the spread among the species'
-fitting plots (see \emph{Uncertainty interval}).}
+\item{sd_dd0, sd_map}{Required when \code{uncertainty = TRUE}, otherwise
+ignored. The standard deviation of \code{dd0} (degree-days) and of \code{map} (mm):
+one value, or one value per element of \code{species}. \code{0} keeps that variable
+fixed. See \emph{Uncertainty interval} for how to calculate them.}
 
 \item{seed}{Optional integer, used only when \code{uncertainty = TRUE}. The
 interval comes from random draws, so without a seed \code{lower} and \code{upper}
@@ -101,21 +100,25 @@ for, and volume is sensitive to climate; see \link{ung_models} and run
 \section{Uncertainty interval}{
 
 With \code{uncertainty = TRUE}, the table gets \code{lower} and \code{upper} columns.
-The package predicts volume 1000 times, each time with \code{dd0} and \code{map}
-drawn at random around the values you supplied. \code{lower} and \code{upper} hold
-the middle 90 \% of these 1000 volumes.
 
-How much \code{dd0} and \code{map} vary is set by \code{sd_dd0} and \code{sd_map}. By
-default they vary as much as climate varies among all the plots used to fit
-that species' model across Canada (\code{dd0_sd} and \code{map_sd} in
-\link{ung_envelope}). The default interval is therefore wide: it shows how
-volume changes across the species' range, not how sure you can be about
-one stand. If you know how uncertain your own climate values are, set
-\code{sd_dd0} and \code{sd_map}.
+\strong{What you get.} The range of volume if your \code{dd0} and \code{map} were off by
+about \code{sd_dd0} and \code{sd_map}. The package predicts volume 1000 times, each
+time drawing \code{dd0} and \code{map} at random (normal distribution, drawn
+independently) around your values. At each age, \code{lower} and \code{upper} hold
+the middle 90 \% of the 1000 volumes. The \code{volume} column is unchanged.
 
-The interval does \strong{not} include the statistical uncertainty of the fitted
-parameters, or the variation of real stands around the model, so real
-stands vary more than the interval shows.
+\strong{What you must supply.} \code{sd_dd0} and \code{sd_map}, the standard deviations
+of your \code{dd0} (degree-days) and \code{map} (mm). climr and ClimateNA (and so
+\code{\link[=ung_climate]{ung_climate()}}) give one value per location, with no standard deviation.
+Other climate tools, such as BioSIM, can simulate many replicates of the
+climate at a location; use the standard deviation across these replicates.
+
+\strong{What you do not get.} The interval covers climate only. It does not
+include error in the fitted parameters, stand-to-stand variation (real
+stands vary more than the interval shows), rounding of the parameters, or
+the model limits (see \code{\link[=ung_check]{ung_check()}}). For Nat1 without
+\code{nat1_bias_correction = TRUE}, both the volume and the interval are biased
+low.
 }
 
 \examples{
@@ -130,7 +133,8 @@ ung_yield_table(c("black spruce", "jack pine"), age = seq(0, 100, by = 20),
 
 # With an uncertainty interval
 tab <- ung_yield_table("jack pine", dd0 = 2194, map = 461,
-                       uncertainty = TRUE, seed = 1)
+                       uncertainty = TRUE, sd_dd0 = 100, sd_map = 50,
+                       seed = 1)
 plot(tab)
 
 # Nat1 and Nat2 on one plot

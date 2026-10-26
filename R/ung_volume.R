@@ -72,16 +72,12 @@
 #' data around each equation, that is multiplied onto the converted value so
 #' that it estimates the average. More scatter gives a larger factor: for black
 #' spruce it is 1.02 for height, 1.32 for basal area, 1.001 for Nat1 volume and
-#' 1.15 for Nat2 volume.
+#' 1.15 for Nat2 volume. The package applies these factors to volume only.
 #'
 #' @section How Nat1 calculates volume:
-#' The Nat1 volume equation is given the predicted *logarithms* of height and
-#' basal area, before their Duan factors are applied. It is not given the
-#' logarithms of the reported height `H` and basal area `G`, which already include
-#' their Duan factors. This is how the authors fitted and wrote the system (in
-#' their file `system equations.xls`) and is what the earlier R scripts do. It
-#' is important: using the corrected height and basal area instead would raise
-#' volume by `CDh^v2 * CDg^v3`, about a third for black spruce.
+#' The Nat1 volume equation uses the predicted height and basal area. `H` and
+#' `G` (from `include_hg = TRUE`) are reported without their Duan factors, so
+#' they are the same values the volume equation uses.
 #'
 #' @section Why Nat1 volume needs a correction:
 #' Uncorrected Nat1 volume is biased low. Step by step:
@@ -198,7 +194,7 @@
 #' any particular site. It is useful for comparing species or sketching a
 #' curve. For a real stand, supply the climate of its location (see
 #' [ung_climate()]), and use `ung_yield_table(uncertainty = TRUE)` to see how
-#' uncertain the prediction is.
+#' much the prediction changes with climate.
 #'
 #' @references
 #' Ung, C.-H., Bernier, P.Y., Guo, X.J. and Lambert, M.-C. 2009. A simple
@@ -341,8 +337,7 @@ ung_volume <- function(species, age, dd0 = NULL, map = NULL,
     ln_g <- (p$g10 + p$g11 * x$dd0 + p$g12 * x$map) +
       (p$g20 + p$g21 * x$dd0 + p$g22 * x$map) / x$age
 
-    # Volume uses the predicted ln(H) and ln(G) *before* their Duan factors;
-    # the Duan factors apply to each output only (authors' "system equations.xls":
+    # Volume uses the predicted ln(H) and ln(G) (authors' "system equations.xls"):
     # ln(V) = v1 + v2*ln(H) + v3*ln(G)
     ln_v <- p$v1 + p$v2 * ln_h + p$v3 * ln_g
     v1 <- exp(ln_v) * p$CDv
@@ -354,8 +349,9 @@ ung_volume <- function(species, age, dd0 = NULL, map = NULL,
       v1 <- v1 * (1 + s2 / 2)
     }
 
-    out$H_Nat1 <- zero_at_age0(exp(ln_h) * p$CDh)
-    out$G_Nat1 <- zero_at_age0(exp(ln_g) * p$CDg)
+    # H and G are reported without their Duan factors (CDh, CDg)
+    out$H_Nat1 <- zero_at_age0(exp(ln_h))
+    out$G_Nat1 <- zero_at_age0(exp(ln_g))
     out$V_Nat1 <- zero_at_age0(v1)
   }
 

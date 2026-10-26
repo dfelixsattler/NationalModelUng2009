@@ -141,26 +141,32 @@ yield_wide[, 1:8]
 
 ## 5. Add an uncertainty interval
 
-Add `uncertainty = TRUE` to get `lower` and `upper` columns. They hold the
-central 90 % interval of many simulated volumes. `seed` makes the random
-simulation repeatable.
+Add `uncertainty = TRUE` to get `lower` and `upper` columns: the range of
+volume if `dd0` and `map` were off by about `sd_dd0` and `sd_map`. The package
+predicts volume 1000 times, each time drawing `dd0` and `map` at random
+(normal distribution, drawn independently) around the values supplied. At
+each age, `lower` and `upper` hold the middle 90 % of the 1000 volumes. The
+`volume` column is unchanged. `seed` makes the random simulation repeatable.
+
+You must give `sd_dd0` and `sd_map`, the standard deviations of `dd0`
+(degree-days) and `map` (mm). climr and ClimateNA give one value per location,
+with no standard deviation. Other climate tools, such as BioSIM, can simulate
+many replicates of the climate at a location; use the standard deviation
+across these replicates. The values below are illustration values only.
 
 ```{r yield-uncertainty}
 yield_unc <- ung_yield_table(curves$species, age = ages,
                              dd0 = curves$dd0, map = curves$map,
                              id = curves$stand_id,
-                             uncertainty = TRUE, seed = 1, warn = FALSE)
+                             uncertainty = TRUE, sd_dd0 = 100, sd_map = 50,
+                             seed = 1, warn = FALSE)
 yield_unc[yield_unc$age == 100, c("id", "species", "volume", "lower", "upper")]
 ```
 
-The interval comes from predicting volume many times with slightly different
-climate. By default, `dd0` and `map` vary as much as they do across all the
-fitting plots for that species in Canada, so the interval is wide. If you
-know how uncertain your own climate values are, set `sd_dd0` and `sd_map`.
-
-It does **not** include the uncertainty of the fitted parameters or the
-variation of real stands around the model, so real stands vary more than the
-interval shows. See `?ung_yield_table` for details.
+The interval covers climate only. It does **not** include error in the fitted
+parameters, stand-to-stand variation (real stands vary more than the interval
+shows), rounding of the parameters, or the model limits (see `ung_check()`).
+See `?ung_yield_table` for details.
 
 `plot()` draws the interval as a shaded band around the curve.
 

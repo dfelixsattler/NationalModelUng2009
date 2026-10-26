@@ -137,8 +137,8 @@ spreadsheets and CSV files (kept in the untracked `myfiles/` folder).
   message. The result is a typical stand of the species, not a site prediction.
 * `ung_yield_table(uncertainty = TRUE)`: Monte Carlo uncertainty interval
   (`lower`, `upper`, the middle 90 % of 1000 predictions) from climate
-  uncertainty only (internal `.ung_uncertainty()`). The only options are
-  `sd_dd0` and `sd_map`; `n`, `interval`, `cor` and `rounding` were removed.
+  uncertainty only (internal `.ung_uncertainty()`). `sd_dd0` and `sd_map` are
+  required (no default); `n`, `interval`, `cor` and `rounding` were removed.
 * `ung_yield_table()` combines every species with every age (internal
   `.ung_curve()`). `ung_volume()` (row by row) is internal; Nat1 height and
   basal area are available with `ung_yield_table(model = "Nat1", include_hg = TRUE)`.
@@ -228,6 +228,8 @@ how the models are used, not what they compute.
   them against observed data.
 * The Duan factors, and the uncorrected ln(H) and ln(G) in the volume equation, are
   the same as in both scripts (confirmed against the authors' `system equations.xls`).
+  Unlike those scripts, the package reports `H` and `G` without their Duan
+  factors (the values the volume equation uses); the factors apply to volume only.
 
 ## 4. Known limitations (by design or inherited from the paper)
 

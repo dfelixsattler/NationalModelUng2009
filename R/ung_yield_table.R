@@ -7,21 +7,25 @@
 #'
 #' @section Uncertainty interval:
 #' With `uncertainty = TRUE`, the table gets `lower` and `upper` columns.
-#' The package predicts volume 1000 times, each time with `dd0` and `map`
-#' drawn at random around the values you supplied. `lower` and `upper` hold
-#' the middle 90 % of these 1000 volumes.
 #'
-#' How much `dd0` and `map` vary is set by `sd_dd0` and `sd_map`. By
-#' default they vary as much as climate varies among all the plots used to fit
-#' that species' model across Canada (`dd0_sd` and `map_sd` in
-#' [ung_envelope]). The default interval is therefore wide: it shows how
-#' volume changes across the species' range, not how sure you can be about
-#' one stand. If you know how uncertain your own climate values are, set
-#' `sd_dd0` and `sd_map`.
+#' **What you get.** The range of volume if your `dd0` and `map` were off by
+#' about `sd_dd0` and `sd_map`. The package predicts volume 1000 times, each
+#' time drawing `dd0` and `map` at random (normal distribution, drawn
+#' independently) around your values. At each age, `lower` and `upper` hold
+#' the middle 90 % of the 1000 volumes. The `volume` column is unchanged.
 #'
-#' The interval does **not** include the statistical uncertainty of the fitted
-#' parameters, or the variation of real stands around the model, so real
-#' stands vary more than the interval shows.
+#' **What you must supply.** `sd_dd0` and `sd_map`, the standard deviations
+#' of your `dd0` (degree-days) and `map` (mm). climr and ClimateNA (and so
+#' [ung_climate()]) give one value per location, with no standard deviation.
+#' Other climate tools, such as BioSIM, can simulate many replicates of the
+#' climate at a location; use the standard deviation across these replicates.
+#'
+#' **What you do not get.** The interval covers climate only. It does not
+#' include error in the fitted parameters, stand-to-stand variation (real
+#' stands vary more than the interval shows), rounding of the parameters, or
+#' the model limits (see [ung_check()]). For Nat1 without
+#' `nat1_bias_correction = TRUE`, both the volume and the interval are biased
+#' low.
 #'
 #' @param species Character vector of species (common name, scientific name or
 #'   code; see [ung_species()]). Each species is combined with every age.
@@ -44,15 +48,14 @@
 #'   [ung_models]. Default `FALSE`.
 #' @param include_hg Logical. For Nat1 only: `TRUE` adds the columns `H`
 #'   (dominant height, m) and `G` (basal area, m2/ha) that Nat1 predicts on
-#'   the way to volume. Long format only. Default `FALSE`.
+#'   the way to volume, without their Duan factors. Long format only. Default
+#'   `FALSE`.
 #' @param uncertainty Logical. `TRUE` adds `lower` and `upper` columns (see
 #'   *Uncertainty interval*). Default `FALSE`.
-#' @param sd_dd0,sd_map Used only when `uncertainty = TRUE`. How much `dd0`
-#'   (degree-days) and `map` (mm) vary in the simulations, as a standard
-#'   deviation: one value, or one value per element of `species`. For example,
-#'   `sd_dd0 = 100` if your `dd0` could be about 100 degree-days off. `0`
-#'   keeps that variable fixed. Default `NULL`: the spread among the species'
-#'   fitting plots (see *Uncertainty interval*).
+#' @param sd_dd0,sd_map Required when `uncertainty = TRUE`, otherwise
+#'   ignored. The standard deviation of `dd0` (degree-days) and of `map` (mm):
+#'   one value, or one value per element of `species`. `0` keeps that variable
+#'   fixed. See *Uncertainty interval* for how to calculate them.
 #' @param seed Optional integer, used only when `uncertainty = TRUE`. The
 #'   interval comes from random draws, so without a seed `lower` and `upper`
 #'   change slightly each time you run the same call. Give any whole number
@@ -93,7 +96,8 @@
 #'
 #' # With an uncertainty interval
 #' tab <- ung_yield_table("jack pine", dd0 = 2194, map = 461,
-#'                        uncertainty = TRUE, seed = 1)
+#'                        uncertainty = TRUE, sd_dd0 = 100, sd_map = 50,
+#'                        seed = 1)
 #' plot(tab)
 #'
 #' # Nat1 and Nat2 on one plot
@@ -118,6 +122,12 @@ ung_yield_table <- function(species, age = seq(0, 150, by = 10), dd0 = NULL,
   if (include_hg && (model != "Nat1" || format != "long")) {
     stop("`include_hg = TRUE` needs model = \"Nat1\" and format = \"long\": ",
          "height and basal area come from the Nat1 equations.", call. = FALSE)
+  }
+  if (uncertainty && (is.null(sd_dd0) || is.null(sd_map))) {
+    stop("`uncertainty = TRUE` needs `sd_dd0` and `sd_map`, the standard ",
+         "deviations of `dd0` (degree-days) and `map` (mm). See the ",
+         "*Uncertainty interval* section of ?ung_yield_table for how to ",
+         "calculate them.", call. = FALSE)
   }
   if (!is.null(id) && (length(id) != length(species) || anyNA(id))) {
     stop("`id` must be NULL or have one value (not NA) per element of ",

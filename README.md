@@ -16,8 +16,11 @@ where a merchantable tree is one with a diameter at breast height greater than
 The paper has two models:
 
 * **Nat1** first predicts dominant height (H, m) and basal area (G, m²/ha), and
-  then predicts volume from H and G. ln(H) = h1 + h2 / age, ln(G) = g1 + g2 / age and ln(V) = v1 + v2 * ln(H) + v3 * ln(G)
-* **Nat2** predicts volume (V, m³/ha) directly from age and climate. ln(V) = (b0 + b1·dd0 + b2·map) + (b3 + b4·dd0 + b5·map) / age
+  then predicts volume from H and G. Specifically:
+  * ln(H) = (h10 + h11·dd0 + h12·map) + (h20 + h21·dd0 + h22·map) / age
+  * ln(G) = (g10 + g11·dd0 + g12·map) + (g20 + g21·dd0 + g22·map) / age
+  * ln(V) = v1 + v2·ln(H) + v3·ln(G)
+* **Nat2** predicts volume (V, m³/ha) directly from age and climate. Specifically, ln(V) = (b0 + b1·dd0 + b2·map) + (b3 + b4·dd0 + b5·map) / age
 
 ## Install
 
@@ -39,9 +42,11 @@ library(NationalModelUng2009)
 tab <- ung_yield_table("black spruce", age = seq(0, 200, by = 10),
                        dd0 = 2079, map = 965)
 
-# The same, with an uncertainty interval (lower and upper columns)
+# The same, with an uncertainty interval (lower and upper columns).
+# The SDs here are illustration values only; see Uncertainty below.
 tab <- ung_yield_table("black spruce", age = seq(0, 200, by = 10),
-                       dd0 = 2079, map = 965, uncertainty = TRUE, seed = 1)
+                       dd0 = 2079, map = 965, uncertainty = TRUE,
+                       sd_dd0 = 100, sd_map = 50, seed = 1)
 
 # One row per curve and one column per age (vol_0, vol_10, ...)
 ung_yield_table(c("black spruce", "jack pine"), age = seq(0, 200, by = 10),
@@ -60,7 +65,7 @@ A step-by-step worked example is in the vignette:
 | --- | --- |
 | `ung_yield_table()` | Simple table of volume by age (0 to 150 by default), one model (Nat2 by default), long or wide layout, optional uncertainty interval, optional Nat1 height and basal area (`include_hg = TRUE`). Has a `plot()` method. Start here. |
 | `ung_check()` | Lists every caution that applies to a set of predictions, with the number of rows affected. |
-| `ung_climate()`, `ung_climate_from_climatena()` | Get `dd0` and `map` (1981–2010 averages by default) for a location from climr https://github.com/bcgov/climr.git or a local copy of ClimateNA (Windows), or from your own ClimateNA/ClimateBC output. |
+| `ung_climate()`, `ung_climate_from_climatena()` | Get `dd0` and `map` (1981–2010 averages by default) for a location from [climr](https://github.com/bcgov/climr) or a local copy of ClimateNA (Windows), or from your own ClimateNA/ClimateBC output. |
 | `ung_species()` | The 25 species, with codes, scientific and common names. |
 | `?ung_models` | Help page on the models: equations, climate inputs, which model to use, the Nat1 correction and limitations. |
 
@@ -70,17 +75,17 @@ A step-by-step worked example is in the vignette:
 directly.
 
 Nat1 predicts H and G first and then puts these predictions into its volume
-equation. The scripts of the current package use the published equations and parameters. As such, Nat1 volume is **biased low**: across the 25 species,
+equation. The current package uses the published equations and parameters. As such, Nat1 volume is **biased low**: across the 25 species,
 at age 80 and each species' average climate, Nat2 is a median of about
 **20 % higher** than Nat1 (see next section). For this reason, **Nat1 has been made available with an optional 
 bias correction.**
 
-### Why Nat1 volume includes a correction
+### Why Nat1 volume includes a correction option
 
 1. The models predict the *logarithm* of volume. Taking `exp()` of a predicted
    log gives the middle (median) stand, not the average stand (assuming the
    errors on the log scale are roughly symmetric, as in a normal distribution).
-2. A Duan factor (as used by the original authors and always applied within this package) is multiplied on to move the median up to
+2. A Duan factor (as used by the original authors and always applied within this package) is applied to move the median up to
    the average. Its size should reflect *all* the scatter of ln(V) at a given
    age and climate.
 3. In Nat1 that scatter has three sources: (i) the scatter of the volume equation
@@ -108,10 +113,10 @@ scatter. It ranges from 1.05 to 1.46 depending on the species (1.29 for black
 spruce). With the correction applied, the median gap between Nat2 and Nat1 falls from about 20 % to
 under 1 %.
 
-Normally, a chosen yield curve is used to represent every hectare of a particular stand type (i.e. stratum), and one multiplies the yields by total area to get total volume for that particular stand type. That calculation needs the average volume per hectare, not the volume per hectare of the median stand. The correction for Nat1 was added as an option (off by default) in this package; it was not part of the published model.
+Why does this matter? Normally, a chosen yield curve is used to represent every hectare of a particular stand type (i.e., a stratum), and one multiplies the yields by total area to get total volume for that particular stand type. That calculation needs the average volume per hectare, not the volume per hectare of the median stand. The correction for Nat1 was added as an option (off by default) in this package; it was not part of the published model.
 
 
-## A Note on Parameters
+## A note on parameters
 
 The paper and the files that were supplied to create this package give the model parameters to
 only **4 decimal places** (a few large values to 4 significant digits).
@@ -126,28 +131,40 @@ average climate, changes are around:
 * **9 %** for Nat1 (standard deviation; from 4 % to 16 % depending on the species);
 * **4 %** for Nat2 (at most 9 %).
 
-This uncertainty comes on top of the other uncertainties (see below).
+This uncertainty comes on top of the other uncertainties (see below). Users should simply be aware of this.
 
 
 
 ## Uncertainty
 
-Users of the package should include uncertainty as part of their workflow. This is possible through
-`ung_yield_table(uncertainty = TRUE)`. This option repeats the prediction many times
-(Monte Carlo simulation), each time with:
+`ung_yield_table(uncertainty = TRUE)` adds two columns, `lower` and `upper`.
 
-* slightly different climate. By default, `dd0` and `map` vary as much as they
-  do across all the fitting plots for that species in Canada, so the interval
-  is wide. If you know how uncertain your own climate values are, set `sd_dd0`
-  and `sd_map`;
-* slightly different parameters, within their rounding interval (see above).
-  Use `rounding = FALSE` to leave this out.
+**What you get.** The range of volume if your `dd0` and `map` were off by
+about `sd_dd0` and `sd_map`. The package predicts volume 1000 times, each time
+drawing `dd0` and `map` at random (normal distribution, drawn independently)
+around your values. At each age, `lower` and `upper` hold the middle 90 % of
+the 1000 volumes. The `volume` column is unchanged: it is the prediction at
+your exact `dd0` and `map`.
 
-**Recommendation:** use `rounding = TRUE`. The rounding uncertainty is real and can't be removed, so leaving it out makes the interval look narrower than it should be. Use `FALSE` only as a diagnostic: run both and compare to see how much of the interval comes from climate and how much from rounding.
+**What you must supply.** `sd_dd0` (degree-days) and `sd_map` (mm), the
+standard deviations of your climate values. climr and ClimateNA (and so
+`ung_climate()`) give one value per location, with no standard deviation.
+Other climate tools, such as BioSIM, can simulate many replicates of the
+climate at a location; use the standard deviation across these replicates.
 
-The result is a central interval (90 % by default) of the simulated volumes, and, in `ung_uncertainty()`, their median. Each simulated volume is already corrected to the average stand, so this "median" is the middle of the simulations, not the median stand (for Nat2 or for Nat1 when `nat1_bias_correction = TRUE`). The `volume` column is the prediction at the climate you supplied with the published parameters.
+**What you do not get.** The interval covers climate only. It does not
+include:
 
-The interval does not include the statistical uncertainty of the fitted parameters (standard errors were provided only for Nat1, without the correlations needed to combine them), nor the stand-to-stand variation around the model. Real stands of the same age and climate will vary more than the interval shows.
+* error in the fitted parameters (the authors published standard errors for
+  Nat1 only, without the correlations needed to combine them);
+* stand-to-stand variation: real stands of the same age and climate vary more
+  than the interval shows;
+* rounding of the parameters (see above);
+* the model limits (long projections, young ages, extrapolation; see
+  `ung_check()`).
+
+For Nat1, use `nat1_bias_correction = TRUE`; otherwise both the volume and the
+interval are biased low.
 
 ## Climate inputs
 
@@ -157,8 +174,8 @@ The interval does not include the statistical uncertainty of the fitted paramete
 * Be careful with names in climate software. `DD5` (degree-days above 5 °C) is
   **not** `dd0`. In ClimateNA, `DD_0`, and in climr, `DDsub0`, are degree-days
   **below** 0 °C, which measure how cold the winter is: the opposite quantity.
-* Climate packages tested (ClimateNA, climr) during the creation of the current package did not provide `dd0` directly. `ung_climate()` (climr) and
-  `ung_climate_from_climatena()` derive it from the variables which are
+* Climate packages tested (ClimateNA, climr) during the creation of the current package did not provide `dd0` directly. `ung_climate()` (from climr or a local copy of ClimateNA) and
+  `ung_climate_from_climatena()` (from your own ClimateNA/ClimateBC output) derive it from the variables which are
   provided: degree-days above 18 °C, below 18 °C and below 0 °C. This is an
   approximation and has not yet been checked against the climate the authors
   used.
@@ -181,7 +198,7 @@ The interval does not include the statistical uncertainty of the fitted paramete
 
 ## Age 0
 
-Starting yield curves from Age 0 is allowed and gives 0 for H, G and V. However, note that very young stands are poorly represented in the fitting data (see `ung_check()`, which flags volumes that are generated for ages younger than the youngest stands used in fitting for that species and for ages under 10 years for all species).
+Starting yield curves from age 0 is allowed and gives 0 for H, G and V. However, note that very young stands are poorly represented in the fitting data (see `ung_check()`, which flags volumes that are generated for ages younger than the youngest stands used in fitting for that species and for ages under 10 years for all species).
 
 ## Limitations (from the paper)
 
@@ -199,14 +216,16 @@ Starting yield curves from Age 0 is allowed and gives 0 for H, G and V. However,
 call** for problems you can do something
 about:
 
-* an input is missing;
+* an input (`age`, `dd0` or `map`) is `NA`, so the prediction is `NA`. (If you
+  leave out `dd0` and `map` altogether, there is no warning: a message says that
+  the species' average climate is used.);
 * the stand is older than any stand used to fit the model;
 * the climate is outside the range of the fitting plots;
 * predicted volume or basal area is larger than in any fitting plot;
 * Nat2 only (`curve_not_rising`): at this climate, the Nat2 curve reaches half
   its maximum volume before age 10 or does not rise with age (consider Nat1).
 
-Warnings may also be listed on-demand with
+Warnings may also be listed on demand with
 `ung_check()`. All other cautions previously discussed still apply.
 
 

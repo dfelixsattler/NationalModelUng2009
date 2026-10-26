@@ -3,8 +3,11 @@
 
 test_that("predictions match the original implementation", {
   a <- ung_volume("POPU.TRE", 50, 2200, 750, warn = FALSE)
+  # H and G: the original values (17.8, 24.0) divided by CDh and CDg, because the
+  # package reports them without their Duan factors
+  p <- ung_parameters[ung_parameters$species == "POPU.TRE", ]
   expect_equal(c(a$H_Nat1, a$G_Nat1, a$V_Nat1, a$V_Nat2),
-               c(17.8, 24.0, 162.5, 190.3), tolerance = 0.01)
+               c(17.8 / p$CDh, 24.0 / p$CDg, 162.5, 190.3), tolerance = 0.01)
 
   b <- ung_volume("PICE.MAR", 80, 2100, 800, warn = FALSE)
   expect_equal(c(b$V_Nat1, b$V_Nat2), c(108, 120), tolerance = 0.01)

@@ -17,8 +17,10 @@ test_that("species-mean climate is used when dd0 and map are omitted", {
 })
 
 test_that("ung_uncertainty returns a reproducible, ordered fan", {
-  a <- .ung_uncertainty("PICE.MAR", c(40, 80), 2000, 900, n = 200, seed = 1, warn = FALSE)
-  b <- .ung_uncertainty("PICE.MAR", c(40, 80), 2000, 900, n = 200, seed = 1, warn = FALSE)
+  a <- .ung_uncertainty("PICE.MAR", c(40, 80), 2000, 900, n = 200, sd_dd0 = 100,
+                        sd_map = 100, seed = 1, warn = FALSE)
+  b <- .ung_uncertainty("PICE.MAR", c(40, 80), 2000, 900, n = 200, sd_dd0 = 100,
+                        sd_map = 100, seed = 1, warn = FALSE)
   expect_equal(a, b)
   expect_equal(nrow(a), 4)
   expect_equal(a$model, rep(c("Nat1", "Nat2"), 2))
@@ -42,25 +44,26 @@ test_that("zero SD collapses the fan; larger SD widens it; seed is restored", {
 
   set.seed(99); r1 <- runif(1)
   set.seed(99)
-  .ung_uncertainty("PINU.BAN", 80, 2200, 800, n = 20, seed = 5, warn = FALSE)
+  .ung_uncertainty("PINU.BAN", 80, 2200, 800, n = 20, sd_dd0 = 100, sd_map = 100,
+                   seed = 5, warn = FALSE)
   expect_equal(runif(1), r1)
 })
 
-test_that("ung_uncertainty uses species-mean climate and SDs by default, and validates", {
-  e <- ung_envelope[ung_envelope$species == "POPU.TRE", ]
-  f <- suppressMessages(.ung_uncertainty("POPU.TRE", 60, n = 50, seed = 3, model = "Nat2"))
-  expect_equal(f$dd0, e$dd0_mean)
-  expect_equal(f$sd_dd0, e$dd0_sd)
-  expect_equal(f$sd_map, e$map_sd)
-  expect_error(.ung_uncertainty("POPU.TRE", 60, n = 5), "`n`")
-  expect_error(.ung_uncertainty("POPU.TRE", c(60, 70), sd_dd0 = c(1, 2, 3)), "`sd_dd0`")
-  expect_error(.ung_uncertainty("POPU.TRE", 60, sd_map = -1), "`sd_map`")
+test_that("uncertainty needs sd_dd0 and sd_map, and validates them", {
+  expect_error(ung_yield_table("POPU.TRE", dd0 = 2200, map = 750, uncertainty = TRUE),
+               "`sd_dd0` and `sd_map`")
+  expect_error(ung_yield_table("POPU.TRE", dd0 = 2200, map = 750, uncertainty = TRUE,
+                               sd_dd0 = 100), "`sd_dd0` and `sd_map`")
+  expect_error(.ung_uncertainty("POPU.TRE", 60, n = 5, sd_dd0 = 1, sd_map = 1), "`n`")
+  expect_error(.ung_uncertainty("POPU.TRE", c(60, 70), sd_dd0 = c(1, 2, 3),
+                                sd_map = 1), "`sd_dd0`")
+  expect_error(.ung_uncertainty("POPU.TRE", 60, sd_dd0 = 1, sd_map = -1), "`sd_map`")
 })
 
 test_that("plot() draws yield tables, with a band and with two models", {
   u <- ung_yield_table("PINU.BAN", age = seq(0, 100, by = 20), dd0 = 2100,
                        map = 800, id = "S1", uncertainty = TRUE,
-                       seed = 1, warn = FALSE)
+                       sd_dd0 = 100, sd_map = 50, seed = 1, warn = FALSE)
   n1 <- ung_yield_table("PINU.BAN", age = seq(0, 100, by = 20), dd0 = 2100,
                         map = 800, model = "Nat1", warn = FALSE)
   n2 <- ung_yield_table("PINU.BAN", age = seq(0, 100, by = 20), dd0 = 2100,

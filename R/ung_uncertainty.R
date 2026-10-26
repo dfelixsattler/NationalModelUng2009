@@ -3,7 +3,7 @@
 # section of ?ung_yield_table. `n` is kept only so tests can run fewer draws.
 .ung_uncertainty <- function(species, age, dd0 = NULL, map = NULL,
                             model = c("both", "Nat1", "Nat2"),
-                            n = 1000, sd_dd0 = NULL, sd_map = NULL,
+                            n = 1000, sd_dd0, sd_map,
                             nat1_bias_correction = FALSE, seed = NULL,
                             warn = TRUE) {
   model <- match.arg(model)
@@ -20,8 +20,8 @@
   if (isTRUE(warn)) .note_defaults(x)
   rows <- nrow(x)
   env <- .envelope_for(x$species)
-  sd_dd0 <- .resolve_sd(sd_dd0, env$dd0_sd, rows, "sd_dd0")
-  sd_map <- .resolve_sd(sd_map, env$map_sd, rows, "sd_map")
+  sd_dd0 <- .resolve_sd(sd_dd0, rows, "sd_dd0")
+  sd_map <- .resolve_sd(sd_map, rows, "sd_map")
 
   # Central prediction (also runs the usual diagnostics)
   central <- ung_volume(x$species, x$age, x$dd0, x$map, model = model,
@@ -71,12 +71,12 @@
   out
 }
 
-# One SD per stand: NULL -> species default; otherwise validate and recycle.
-.resolve_sd <- function(sd, default, rows, name) {
-  if (is.null(sd)) return(default)
-  if (!is.numeric(sd) || anyNA(sd) || any(sd < 0) || !(length(sd) %in% c(1L, rows))) {
-    stop("`", name, "` must be NULL, or non-negative numbers of length 1 or ",
-         "the number of stands.", call. = FALSE)
+# One SD per stand: validate and recycle.
+.resolve_sd <- function(sd, rows, name) {
+  if (is.null(sd) || !is.numeric(sd) || anyNA(sd) || any(sd < 0) ||
+      !(length(sd) %in% c(1L, rows))) {
+    stop("`", name, "` must be one non-negative number, or one per curve.",
+         call. = FALSE)
   }
   rep_len(as.numeric(sd), rows)
 }
