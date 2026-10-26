@@ -1,5 +1,12 @@
 # NationalModelUng2009
 
+<!-- badges: start -->
+[![R-CMD-check](https://github.com/dfelixsattler/NationalModelUng2009/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/dfelixsattler/NationalModelUng2009/actions/workflows/R-CMD-check.yaml)
+[![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/dfelixsattler/NationalModelUng2009/blob/main/LICENSE.md)
+[![Paper DOI](https://img.shields.io/badge/DOI-10.5558%2Ftfc85057--1-blue.svg)](https://doi.org/10.5558/tfc85057-1)
+<!-- badges: end -->
+
 R implementation of the two national stand-volume models of
 
 > Ung, C.-H., Bernier, P.Y., Guo, X.J. and Lambert, M.-C. 2009. A simple growth
