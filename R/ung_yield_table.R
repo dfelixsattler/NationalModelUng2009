@@ -6,22 +6,18 @@
 #' Use [plot()] to draw the curves.
 #'
 #' @section Uncertainty interval:
-#' With `uncertainty = TRUE`, the table gets `lower` and `upper` columns: the
-#' central 90 % interval (by default) of many simulated volumes. Each
-#' simulation uses slightly different climate and slightly different
-#' parameters:
+#' With `uncertainty = TRUE`, the table gets `lower` and `upper` columns.
+#' The package predicts volume 1000 times, each time with `dd0` and `map`
+#' drawn at random around the values you supplied. `lower` and `upper` hold
+#' the middle 90 % of these 1000 volumes.
 #'
-#' * **Climate.** `dd0` and `map` are drawn at random around the values you
-#'   supplied. By default they vary as much as climate varies among the plots
-#'   used to fit that species' model across Canada (`dd0_sd` and `map_sd` in
-#'   [ung_envelope]), so the interval is wide. If you know how uncertain your
-#'   own climate values are, set `sd_dd0` and `sd_map`.
-#' * **Rounding of the parameters.** The authors published every parameter
-#'   with only 4 decimal places, and the unrounded values are not available.
-#'   Each simulation picks every parameter at random within half a unit of its
-#'   last printed digit (for example, 0.1234 becomes a value between 0.12335
-#'   and 0.12345). Keep the default `rounding = TRUE`; `rounding = FALSE` only
-#'   shows how much of the interval comes from climate alone.
+#' How much `dd0` and `map` vary is set by `sd_dd0` and `sd_map`. By
+#' default they vary as much as climate varies among all the plots used to fit
+#' that species' model across Canada (`dd0_sd` and `map_sd` in
+#' [ung_envelope]). The default interval is therefore wide: it shows how
+#' volume changes across the species' range, not how sure you can be about
+#' one stand. If you know how uncertain your own climate values are, set
+#' `sd_dd0` and `sd_map`.
 #'
 #' The interval does **not** include the statistical uncertainty of the fitted
 #' parameters, or the variation of real stands around the model, so real
@@ -38,14 +34,6 @@
 #'   predicts average volume directly; see *Which model to use* in
 #'   [ung_models]. One model per call; to compare both, run the function
 #'   once for each and combine the results with [rbind()].
-#' @param ... Options for the uncertainty interval, used only when
-#'   `uncertainty = TRUE` (see *Uncertainty interval*): `n`, the number of
-#'   simulations (default 1000); `interval`, the central probability of the
-#'   interval (default 0.9); `sd_dd0` and `sd_map`, the standard deviation of
-#'   `dd0` (degree-days) and `map` (mm), one value or one per curve (default:
-#'   the species values in [ung_envelope]; 0 holds the variable fixed); `cor`,
-#'   the correlation between the `dd0` and `map` draws (default 0); and
-#'   `rounding` (default `TRUE`). Arguments after `...` must be named in full.
 #' @param id Optional label for each curve, for example a stand ID: one value
 #'   per element of `species`. The same label can be repeated, for example for
 #'   a stand with two species. When given, it becomes the first column, `id`,
@@ -59,6 +47,12 @@
 #'   the way to volume. Long format only. Default `FALSE`.
 #' @param uncertainty Logical. `TRUE` adds `lower` and `upper` columns (see
 #'   *Uncertainty interval*). Default `FALSE`.
+#' @param sd_dd0,sd_map Used only when `uncertainty = TRUE`. How much `dd0`
+#'   (degree-days) and `map` (mm) vary in the simulations, as a standard
+#'   deviation: one value, or one value per element of `species`. For example,
+#'   `sd_dd0 = 100` if your `dd0` could be about 100 degree-days off. `0`
+#'   keeps that variable fixed. Default `NULL`: the spread among the species'
+#'   fitting plots (see *Uncertainty interval*).
 #' @param seed Optional integer, used only when `uncertainty = TRUE`. The
 #'   interval comes from random draws, so without a seed `lower` and `upper`
 #'   change slightly each time you run the same call. Give any whole number
@@ -81,9 +75,8 @@
 #'   `ung_yield_table(c("black spruce", "black spruce", "jack pine"), id = c("A", "B", "B"), dd0 = c(1800, 2200, 2200), map = c(600, 900, 900))`.
 #'
 #'   A yield curve is a longer projection than the authors designed the models
-#'   for, and volume is sensitive to climate and to the rounding of the
-#'   parameters; see [ung_models] and run [ung_check()] on the long table for
-#'   details.
+#'   for, and volume is sensitive to climate; see [ung_models] and run
+#'   [ung_check()] on the long table for details.
 #'
 #' @return A data.frame of class `ung_yield_table` (see `format`).
 #' @seealso [plot.ung_yield_table()], [ung_check()], [ung_models]
@@ -113,9 +106,10 @@
 #' head(ung_yield_table("jack pine", dd0 = 2194, map = 461, model = "Nat1",
 #'                      include_hg = TRUE))
 ung_yield_table <- function(species, age = seq(0, 150, by = 10), dd0 = NULL,
-                            map = NULL, model = "Nat2", ...,
+                            map = NULL, model = "Nat2",
                             id = NULL, nat1_bias_correction = FALSE,
-                            include_hg = FALSE, uncertainty = FALSE, seed = NULL,
+                            include_hg = FALSE, uncertainty = FALSE,
+                            sd_dd0 = NULL, sd_map = NULL, seed = NULL,
                             format = "long", warn = TRUE) {
   model <- .check_choice(model, c("Nat2", "Nat1"), "model")
   format <- .check_choice(format, c("long", "wide"), "format")
@@ -153,7 +147,8 @@ ung_yield_table <- function(species, age = seq(0, 150, by = 10), dd0 = NULL,
     u <- .ung_uncertainty(curve$species, curve$age, curve$dd0, curve$map,
                          model = model,
                          nat1_bias_correction = nat1_bias_correction,
-                         seed = seed, warn = FALSE, ...)
+                         sd_dd0 = sd_dd0, sd_map = sd_map, seed = seed,
+                         warn = FALSE)
     out$lower <- u$lower
     out$upper <- u$upper
   }

@@ -9,21 +9,23 @@
 #' * **Nat1** first predicts dominant height `H` (m) and basal area `G`
 #'   (m2/ha), then predicts volume from them:
 #'   `ln(H) = h1 + h2 / age`, `ln(G) = g1 + g2 / age` and
-#'   `ln(V) = v30 + v31 * ln(H) + v32 * ln(G)`. Each of `h1`, `h2`, `g1` and
+#'   `ln(V) = v1 + v2 * ln(H) + v3 * ln(G)`. Each of `h1`, `h2`, `g1` and
 #'   `g2` changes in a straight line with `dd0` and `map` (for example
 #'   `h1 = h10 + h11 * dd0 + h12 * map`).
-#' * **Nat2** predicts volume directly: `ln(V) = v1 + v2 / age`, where `v1`
-#'   and `v2` are again straight-line functions of `dd0` and `map`.
+#' * **Nat2** predicts volume directly:
+#'   `ln(V) = (b0 + b1 * dd0 + b2 * map) + (b3 + b4 * dd0 + b5 * map) / age`.
+#'
+#' Parameter names follow Table 4 of the paper (`b0` to `b5` are the
+#' paper's beta0 to beta5); the values are in [ung_parameters].
 #'
 #' Volume is the gross volume of live merchantable trees, that is, trees with a
 #' diameter at breast height greater than 9 cm.
 #'
 #' @section Which model to use:
 #' The choice is left to the user. **Nat2** is the default of
-#' [ung_yield_table()] because it predicts average volume directly, and its
-#' parameters are less affected by rounding (see *Parameters are rounded*).
-#' **Nat1** also gives height and basal area (`include_hg = TRUE`), but its published volume is
-#' biased low (Nat2 is a median of about 20 % higher). For this reason Nat1
+#' [ung_yield_table()] because it predicts average volume directly.
+#' **Nat1** also gives height and basal area (`include_hg = TRUE`), but its
+#' published volume is biased low (Nat2 is a median of about 20 % higher). For this reason Nat1
 #' has an optional bias correction; read *Why Nat1 volume needs a correction*.
 #'
 #' @section Climate inputs:
@@ -79,7 +81,7 @@
 #' their Duan factors. This is how the authors fitted and wrote the system (in
 #' their file `system equations.xls`) and is what the earlier R scripts do. It
 #' is important: using the corrected height and basal area instead would raise
-#' volume by `CDh^v31 * CDg^v32`, about a third for black spruce.
+#' volume by `CDh^v2 * CDg^v3`, about a third for black spruce.
 #'
 #' @section Why Nat1 volume needs a correction:
 #' Uncorrected Nat1 volume is biased low. Step by step:
@@ -92,8 +94,8 @@
 #'    size should reflect *all* the scatter of `ln(V)` at a given age and
 #'    climate.
 #' 3. In Nat1, that scatter has three sources: the scatter of the volume
-#'    equation itself, the error in predicted `ln(H)` (times `v31`) and the
-#'    error in predicted `ln(G)` (times `v32`).
+#'    equation itself, the error in predicted `ln(H)` (times `v2`) and the
+#'    error in predicted `ln(G)` (times `v3`).
 #' 4. Nat1's volume factor (`CDv`, about 1.001) was estimated with *measured* H
 #'    and G, where volume is almost exactly determined. It covers only the
 #'    first source. The errors carried over from predicted H and G, mostly from
@@ -105,7 +107,7 @@
 #' 6. For Nat1, the missing scatter can be estimated. Each Duan factor gives the
 #'    variance of its log errors, about `2 * ln(CD)`. The extra variance that H
 #'    and G add to `ln(V)` is then
-#'    `s2 = v31^2 * 2 * ln(CDh) + v32^2 * 2 * ln(CDg)`, and a second-order
+#'    `s2 = v2^2 * 2 * ln(CDh) + v3^2 * 2 * ln(CDg)`, and a second-order
 #'    Taylor-series expansion gives the missing factor, about `1 + s2 / 2`.
 #'    `nat1_bias_correction = TRUE` multiplies Nat1 volume by this factor, in
 #'    addition to `CDv`.
@@ -130,20 +132,6 @@
 #' package; it is not part of the published model, and it rests on the
 #' assumptions above. Nat2 does not need it. Height (`H`) and basal area
 #' (`G`) are not changed by it.
-#'
-#' @section Parameters are rounded to 4 decimal places:
-#' The paper and every file supplied by the authors give the parameters to 4
-#' decimal places (a few large values to 4 significant digits). The unrounded
-#' values are not available, so the package uses the rounded ones. This
-#' matters because some coefficients are tiny and are multiplied by large
-#' climate values: `h11 = 0.0001` times `dd0 = 2000` adds 0.2 to `ln(H)`,
-#' but the true `h11` could be anywhere from 0.00005 to 0.00015. When every
-#' coefficient is moved at random within its rounding interval, predicted
-#' volume at age 80 and each species' average climate varies by about 9 %
-#' (standard deviation) for Nat1, from 4 % to 16 % depending on the species
-#' (tamarack is the worst), and by about 4 % for Nat2 (at most 9 %). This is
-#' in addition to every other source of uncertainty. The uncertainty interval
-#' of [ung_yield_table()] includes it by default (`rounding = TRUE`).
 #'
 #' @section Age 0:
 #' Age 0 is allowed and gives 0 for height, basal area and volume, which is
@@ -173,8 +161,8 @@
 #' * predicted volume or basal area is larger than in any fitting plot;
 #' * Nat2 only: at this climate, Nat2 volume reaches half of its maximum before
 #'   age 10 or does not rise with age at all. In Nat2,
-#'   `ln(V) = v1 + v2 / age`, and the climate terms in `v2` can bring it close
-#'   to zero (or above it) even inside the fitting climate, mainly for
+#'   `b3 + b4 * dd0 + b5 * map` (the part divided by age) can be close to
+#'   zero or above it, even inside the fitting climate, mainly for
 #'   Douglas-fir, white spruce, subalpine fir, red pine and eastern white pine
 #'   in dry places. Nat1 usually gives a normal rising curve there.
 #'
@@ -335,8 +323,8 @@ ung_volume <- function(species, age, dd0 = NULL, map = NULL,
 `%nin%` <- function(x, table) !(x %in% table)
 
 # Core equations, vectorised over the rows of `x`. `p` holds one parameter row
-# per row of `x`; by default it is looked up from `ung_parameters` (.ung_uncertainty()
-# passes perturbed copies). Rows with age 0 return 0.
+# per row of `x`; by default it is looked up from `ung_parameters`. Rows with
+# age 0 return 0.
 .predict <- function(x, model, p = NULL, nat1_bias_correction = FALSE) {
   if (is.null(p)) {
     p <- NationalModelUng2009::ung_parameters
@@ -355,14 +343,14 @@ ung_volume <- function(species, age, dd0 = NULL, map = NULL,
 
     # Volume uses the predicted ln(H) and ln(G) *before* their Duan factors;
     # the Duan factors apply to each output only (authors' "system equations.xls":
-    # ln(V) = v30 + v31*ln(H) + v32*ln(G))
-    ln_v <- p$v30 + p$v31 * ln_h + p$v32 * ln_g
+    # ln(V) = v1 + v2*ln(H) + v3*ln(G)
+    ln_v <- p$v1 + p$v2 * ln_h + p$v3 * ln_g
     v1 <- exp(ln_v) * p$CDv
 
     # Optional second-order Taylor correction for the H and G errors carried
     # into ln(V): each variance estimated as 2 * ln(Duan factor), errors uncorrelated
     if (isTRUE(nat1_bias_correction)) {
-      s2 <- p$v31^2 * 2 * log(p$CDh) + p$v32^2 * 2 * log(p$CDg)
+      s2 <- p$v2^2 * 2 * log(p$CDh) + p$v3^2 * 2 * log(p$CDg)
       v1 <- v1 * (1 + s2 / 2)
     }
 
@@ -372,8 +360,8 @@ ung_volume <- function(species, age, dd0 = NULL, map = NULL,
   }
 
   if (model %in% c("Nat2", "both")) {
-    ln_v2 <- (p$v10 + p$v11 * x$dd0 + p$v12 * x$map) +
-      (p$v20 + p$v21 * x$dd0 + p$v22 * x$map) / x$age
+    ln_v2 <- (p$b0 + p$b1 * x$dd0 + p$b2 * x$map) +
+      (p$b3 + p$b4 * x$dd0 + p$b5 * x$map) / x$age
     out$V_Nat2 <- zero_at_age0(exp(ln_v2) * p$CDv2)
   }
 

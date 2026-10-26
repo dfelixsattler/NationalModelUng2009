@@ -16,8 +16,8 @@ where a merchantable tree is one with a diameter at breast height greater than
 The paper has two models:
 
 * **Nat1** first predicts dominant height (H, m) and basal area (G, m²/ha), and
-  then predicts volume from H and G.
-* **Nat2** predicts volume (V, m³/ha) directly from age and climate.
+  then predicts volume from H and G. ln(H) = h1 + h2 / age, ln(G) = g1 + g2 / age and ln(V) = v1 + v2 * ln(H) + v3 * ln(G)
+* **Nat2** predicts volume (V, m³/ha) directly from age and climate. ln(V) = (b0 + b1·dd0 + b2·map) + (b3 + b4·dd0 + b5·map) / age
 
 ## Install
 
@@ -60,9 +60,9 @@ A step-by-step worked example is in the vignette:
 | --- | --- |
 | `ung_yield_table()` | Simple table of volume by age (0 to 150 by default), one model (Nat2 by default), long or wide layout, optional uncertainty interval, optional Nat1 height and basal area (`include_hg = TRUE`). Has a `plot()` method. Start here. |
 | `ung_check()` | Lists every caution that applies to a set of predictions, with the number of rows affected. |
-| `ung_climate()`, `ung_climate_from_climatena()` | Get `dd0` and `map` (1981–2010 averages by default) for a location from climr or a local copy of ClimateNA (Windows), or from your own ClimateNA/ClimateBC output. |
+| `ung_climate()`, `ung_climate_from_climatena()` | Get `dd0` and `map` (1981–2010 averages by default) for a location from climr https://github.com/bcgov/climr.git or a local copy of ClimateNA (Windows), or from your own ClimateNA/ClimateBC output. |
 | `ung_species()` | The 25 species, with codes, scientific and common names. |
-| `?ung_models` | Help page on the models: equations, climate inputs, which model to use, the Nat1 correction, rounded parameters and limitations. |
+| `?ung_models` | Help page on the models: equations, climate inputs, which model to use, the Nat1 correction and limitations. |
 
 ## Which model to use
 
@@ -72,8 +72,8 @@ directly.
 Nat1 predicts H and G first and then puts these predictions into its volume
 equation. The scripts of the current package use the published equations and parameters. As such, Nat1 volume is **biased low**: across the 25 species,
 at age 80 and each species' average climate, Nat2 is a median of about
-**20 % higher** than Nat1 (see next section). For this reason, Nat1 has been made available with an optional 
-bias correction.
+**20 % higher** than Nat1 (see next section). For this reason, **Nat1 has been made available with an optional 
+bias correction.**
 
 ### Why Nat1 volume includes a correction
 
@@ -84,8 +84,8 @@ bias correction.
    the average. Its size should reflect *all* the scatter of ln(V) at a given
    age and climate.
 3. In Nat1 that scatter has three sources: (i) the scatter of the volume equation
-   itself, (ii) the error in predicted ln(H) (times `v31`) and (iii) the error in
-   predicted ln(G) (times `v32`).
+   itself, (ii) the error in predicted ln(H) (times `v2`) and (iii) the error in
+   predicted ln(G) (times `v3`).
 4. Nat1's volume Duan factor (`CDv`, about 1.001) was estimated with *measured* H and
    G, where volume is almost exactly determined. It covers only the first
    source (i.e., the scatter of the volume equation itself). The errors carried over from predicted H and G, mostly from G, are
@@ -96,7 +96,7 @@ bias correction.
 6. For Nat1, the missing scatter can be estimated (given some assumptions). Each Duan factor gives the
    variance of its log errors, about `2 * ln(CD)`. The extra variance that H
    and G add to ln(V) is
-   `s2 = v31^2 * 2 * ln(CDh) + v32^2 * 2 * ln(CDg)`, and a second-order Taylor
+   `s2 = v2^2 * 2 * ln(CDh) + v3^2 * 2 * ln(CDg)`, and a second-order Taylor
    series expansion gives the missing factor, about `1 + s2 / 2`.
    `nat1_bias_correction = TRUE` multiplies Nat1 volume by this factor, in
    addition to `CDv`.
@@ -108,7 +108,7 @@ scatter. It ranges from 1.05 to 1.46 depending on the species (1.29 for black
 spruce). With the correction applied, the median gap between Nat2 and Nat1 falls from about 20 % to
 under 1 %.
 
-This matters for the Carbon Budget Model and similar tools. Normally, a chosen yield curve is used to represent every hectare of a particular stand type (i.e. stratum), and one multiplies the yields by total area to get total volume for that particular stand type. That calculation needs the average volume per hectare, not the volume per hectare of the median stand. The correction for Nat1 was added as an option (off by default) in this package; it was not part of the published model.
+Normally, a chosen yield curve is used to represent every hectare of a particular stand type (i.e. stratum), and one multiplies the yields by total area to get total volume for that particular stand type. That calculation needs the average volume per hectare, not the volume per hectare of the median stand. The correction for Nat1 was added as an option (off by default) in this package; it was not part of the published model.
 
 
 ## A Note on Parameters
@@ -126,15 +126,14 @@ average climate, changes are around:
 * **9 %** for Nat1 (standard deviation; from 4 % to 16 % depending on the species);
 * **4 %** for Nat2 (at most 9 %).
 
-This uncertainty comes on top of the other uncertainties. Users of the package must simply be aware of this. It is baked-in to the `ung_uncertainty()` and
-`ung_yield_table(uncertainty = TRUE)` functions.
+This uncertainty comes on top of the other uncertainties (see below).
 
 
 
 ## Uncertainty
 
-Users of the package should include uncertainty as part of their workflow. This is possible through `ung_uncertainty()` and
-`ung_yield_table(uncertainty = TRUE)`. These functions repeat the prediction many times
+Users of the package should include uncertainty as part of their workflow. This is possible through
+`ung_yield_table(uncertainty = TRUE)`. This option repeats the prediction many times
 (Monte Carlo simulation), each time with:
 
 * slightly different climate. By default, `dd0` and `map` vary as much as they

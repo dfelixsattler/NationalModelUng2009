@@ -40,15 +40,15 @@ spreadsheets and CSV files (kept in the untracked `myfiles/` folder).
   a median of about 20 % above Nat1 (higher for all 25 species). Nat1 stays
   available unchanged, with an opt-in second-order Taylor correction
   (`nat1_bias_correction = TRUE`, factor `1 + s2/2`,
-  `s2 = v31^2 * 2 ln(CDh) + v32^2 * 2 ln(CDg)`, H and G errors assumed
+  `s2 = v2^2 * 2 ln(CDh) + v3^2 * 2 ln(CDg)`, H and G errors assumed
   uncorrelated). The factor is 1.05 to 1.46 (median 1.20) and reduces the
   median Nat2/Nat1 gap to under 1 %.
 * **Parameters are rounded to 4 decimal places in every source** (a few large
   values to 4 significant digits), and the unrounded estimates will not become
-  available. The effect is documented prominently (README, `?ung_models`,
-  `?ung_parameters`) and is included by default in the uncertainty interval of `ung_yield_table()`
-  (`rounding = TRUE`). At age 80 and species-mean climate it is about 9 %
-  (3 % to 16 %) for Nat1 and about 4 % (up to 9 %) for Nat2, as an SD.
+  available. Users accept the published values; the README has a note. The
+  package no longer simulates the rounding (the `rounding` option was removed).
+  At age 80 and species-mean climate its effect was about 9 % (3 % to 16 %) for
+  Nat1 and about 4 % (up to 9 %) for Nat2, as an SD.
 * **Uncertainty is part of the main workflow** (`ung_yield_table(uncertainty =
   TRUE)`), not an add-on.
 * **One warning per call, plus `ung_check()`.** Warnings that fire on almost
@@ -136,8 +136,9 @@ spreadsheets and CSV files (kept in the untracked `myfiles/` folder).
   used to fit that species' model (`ung_envelope$dd0_mean`, `$map_mean`), with a
   message. The result is a typical stand of the species, not a site prediction.
 * `ung_yield_table(uncertainty = TRUE)`: Monte Carlo uncertainty interval
-  (`lower`, `upper`) from climate uncertainty and parameter rounding (internal
-  `.ung_uncertainty()`; options passed through `...`).
+  (`lower`, `upper`, the middle 90 % of 1000 predictions) from climate
+  uncertainty only (internal `.ung_uncertainty()`). The only options are
+  `sd_dd0` and `sd_map`; `n`, `interval`, `cor` and `rounding` were removed.
 * `ung_yield_table()` combines every species with every age (internal
   `.ung_curve()`). `ung_volume()` (row by row) is internal; Nat1 height and
   basal area are available with `ung_yield_table(model = "Nat1", include_hg = TRUE)`.
@@ -150,11 +151,11 @@ spreadsheets and CSV files (kept in the untracked `myfiles/` folder).
 * Vignette `vignettes/ung-workflow.Rmd`: an end-to-end example built around
   `ung_yield_table()`, uncertainty, `ung_check()` and the choice between Nat1
   and Nat2. Its text no longer depends on exact counts of warnings.
-* README (plain-English sections on the model choice, rounding, uncertainty,
+* README (plain-English sections on the model choice, uncertainty,
   climate names, the Duan factor, warnings and age 0), roxygen help pages and
   `ung_envelope` / `ung_parameters` provenance notes.
 * Tests in `tests/testthat/` (volume, age 0, bias correction, warning and
-  checks, yield table, curves, uncertainty with rounding, ClimateNA conversion).
+  checks, yield table, curves, uncertainty, ClimateNA conversion).
 * `data-raw/build_parameters.R` now reads `myfiles/Ung_stand_volume_function.R`
   (repo-relative) instead of a personal OneDrive path. Rebuilding gives an
   identical `ung_parameters`.
@@ -201,8 +202,8 @@ how the models are used, not what they compute.
 | Problem | Package |
 | --- | --- |
 | **The Monte Carlo draws are truncated at plus or minus 1 SD** (by rejection sampling). A normal variable truncated this way has a standard deviation of only about 0.54 of the stated SD, so the spread of the curves is understated by almost half. | `ung_uncertainty()` draws untruncated normal values (bounded at 0), so the spread matches the stated SD. The SD can be set (`sd_dd0`, `sd_map`), and the share of draws outside the fitting range is reported (`prop_outside`). |
-| Degree-days and precipitation are drawn independently. | A correlation can be set (`cor`). The default is 0, which is stated. |
-| The default SD is the among-plot spread (spatial variation). The script does not say that this is not the uncertainty of a site's climate. | The docs say that the default is spatial, not inter-annual and not product error, and that the interval covers climate and parameter rounding only, not the full range of real stands. |
+| Degree-days and precipitation are drawn independently. | Unchanged: they are still drawn independently (a `cor` option was tried and removed as rarely useful). |
+| The default SD is the among-plot spread (spatial variation). The script does not say that this is not the uncertainty of a site's climate. | The docs say that the default is spatial, not inter-annual and not product error, and that the interval covers climate only, not the full range of real stands. |
 | The draw loops append values one at a time (`repeat`, `append`). They never end if an SD is missing (`NA`). | Draws are vectorised. `seed` makes them repeatable, and the user's random-number state is restored. |
 | The result is raw curves. There is no interval (median, bounds) and no plot method. | The result has the median and a central interval (`interval`, default 90 %), and a `plot()` method. |
 | Nat1 only. No Nat2, so there is no second model to compare. | Both models; `ung_check()` flags disagreement of more than 30 %. Nat2 is recommended, and Nat1 has an optional bias correction. |
@@ -214,7 +215,7 @@ how the models are used, not what they compute.
 
 * The per-species fitting envelope, the single warning and `ung_check()`.
 * `ung_yield_table()` for CBM-style tables starting at age 0.
-* The parameter-rounding uncertainty and the optional Nat1 bias correction.
+* The optional Nat1 bias correction.
 * The `sensitive_to_climate` check of `ung_check()`, which flags how much the volume changes for a 100
   degree-day or 100 mm error in the climate values.
 * Defaults for omitted climate (the average `dd0` and `map` of each species' fitting
@@ -241,7 +242,7 @@ how the models are used, not what they compute.
 * Volume is very sensitive to climate. For jack pine at age 80 (`dd0` 2200,
   `map` 800), a 100 degree-day error changes Nat1 volume by about 26 %.
 * The parameters are rounded (section 2). This cannot be fixed.
-* The uncertainty interval covers climate and parameter rounding only. Nat1
+* The uncertainty interval covers climate only (not parameter rounding). Nat1
   standard errors exist in `Parms.csv`, but there are none for Nat2 and no
   parameter correlations, so parameter estimation error is not included.
 * The Nat1 bias correction assumes uncorrelated H and G errors and roughly
@@ -285,13 +286,13 @@ Resolved on 2026-10-22:
 
 | Path | Contents |
 | --- | --- |
-| `R/ung_volume.R` | the `?ung_models` help page, the internal `ung_volume()`, input checks, the equations (`.predict`), the main documentation of model choice, rounding, Duan factor, climate names |
+| `R/ung_volume.R` | the `?ung_models` help page, the internal `ung_volume()`, input checks, the equations (`.predict`), the main documentation of model choice, Duan factor, climate names |
 | `R/ung_yield_table.R` | `ung_yield_table()` (long and wide CBM-style tables) |
 | `R/ung_curve.R` | `.ung_curve()` (internal: every species at every age) |
 | `R/checks.R` | `ung_check()`, the single warning, thresholds |
 | `R/calibration.R` | Envelope lookup and the warning helper |
 | `R/ung_sensitivity.R` | `.ung_sensitivity()` (internal, used by `ung_check()`) |
-| `R/ung_uncertainty.R` | `.ung_uncertainty()` (internal) and the rounding draws |
+| `R/ung_uncertainty.R` | `.ung_uncertainty()` (internal), the climate draws |
 | `R/ung_climate.R` | `ung_climate()` (climr or ClimateNA), `ung_climate_from_climatena()`, the `dd0` derivation |
 | `R/plot.R` | `plot.ung_yield_table()` |
 | `R/data.R` | Documentation and provenance of `ung_parameters`, `ung_envelope`, `example_stands` and `example_climate` |

@@ -153,15 +153,10 @@ yield_unc <- ung_yield_table(curves$species, age = ages,
 yield_unc[yield_unc$age == 100, c("id", "species", "volume", "lower", "upper")]
 ```
 
-The interval includes two sources of uncertainty:
-
-- **rounding of the published parameters**, which were published to four
-  decimal places (the unrounded values are not available). Keep the default
-  `rounding = TRUE`;
-- **slightly different climate**. By default, `dd0` and `map` vary as much as
-  they do across all the fitting plots for that species in Canada, so the
-  interval is wide. If you know how uncertain your own climate values are,
-  set `sd_dd0` and `sd_map`.
+The interval comes from predicting volume many times with slightly different
+climate. By default, `dd0` and `map` vary as much as they do across all the
+fitting plots for that species in Canada, so the interval is wide. If you
+know how uncertain your own climate values are, set `sd_dd0` and `sd_map`.
 
 It does **not** include the uncertainty of the fitted parameters or the
 variation of real stands around the model, so real stands vary more than the

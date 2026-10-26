@@ -53,7 +53,7 @@ test_that("Nat1 bias correction raises Nat1 volume only, by a factor above 1", {
   fixed <- ung_volume("PICE.MAR", 80, 2079, 965, nat1_bias_correction = TRUE,
                       warn = FALSE)
   p <- ung_parameters[ung_parameters$species == "PICE.MAR", ]
-  factor <- 1 + (p$v31^2 * 2 * log(p$CDh) + p$v32^2 * 2 * log(p$CDg)) / 2
+  factor <- 1 + (p$v2^2 * 2 * log(p$CDh) + p$v3^2 * 2 * log(p$CDg)) / 2
   expect_equal(fixed$V_Nat1, plain$V_Nat1 * factor)
   expect_equal(fixed$V_Nat2, plain$V_Nat2)
   expect_equal(fixed$H_Nat1, plain$H_Nat1)
@@ -183,11 +183,13 @@ test_that("ung_yield_table gives a simple long or wide table, Nat2 by default", 
   expect_equal(w$vol_50[2], ung_volume("PINU.BAN", 50, 2179, 772, warn = FALSE)$V_Nat1)
 
   u <- ung_yield_table("PINU.BAN", age = c(0, 60), dd0 = 2179, map = 772,
-                       uncertainty = TRUE, n = 50, seed = 1, warn = FALSE)
+                       uncertainty = TRUE, sd_dd0 = 100, sd_map = 100,
+                       seed = 1, warn = FALSE)
   expect_named(u, c("species", "model", "dd0", "map", "age", "volume", "lower", "upper"))
   expect_true(all(u$lower <= u$upper))
   uw <- ung_yield_table("PINU.BAN", age = c(0, 60), dd0 = 2179, map = 772,
-                        uncertainty = TRUE, format = "wide", n = 50, seed = 1,
+                        uncertainty = TRUE, format = "wide", sd_dd0 = 100,
+                        sd_map = 100, seed = 1,
                         warn = FALSE)
   expect_equal(uw$statistic, c("volume", "lower", "upper"))
   expect_equal(uw$vol_60, c(u$volume[2], u$lower[2], u$upper[2]))

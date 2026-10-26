@@ -11,11 +11,12 @@ A data.frame with 25 rows and 26 columns:
 \item{h10-h22}{Nat1 dominant height (H) parameters:
 \code{h1 = h10 + h11 * dd0 + h12 * map}, \code{h2 = h20 + h21 * dd0 + h22 * map}.}
 \item{g10-g22}{Nat1 basal area (G) parameters, same structure as \code{h}.}
-\item{v30, v31, v32}{Nat1 volume parameters: intercept, and the
+\item{v1, v2, v3}{Nat1 volume parameters: intercept, and the
 coefficients of ln(H) and ln(G).}
 \item{CDh, CDg, CDv}{Nat1 Duan correction factors (see \emph{Duan correction
 factor} in \link{ung_models}).}
-\item{v10-v22}{Nat2 volume parameters, same structure as \code{h}.}
+\item{b0-b5}{Nat2 volume parameters (beta0 to beta5 in the paper):
+\code{ln(V) = (b0 + b1 * dd0 + b2 * map) + (b3 + b4 * dd0 + b5 * map) / age}.}
 \item{CDv2}{Nat2 Duan correction factor.}
 }
 }
@@ -32,17 +33,12 @@ Ung et al. (2009) supplied with the developers' files
 (\code{Ung_stand_volume_function.R}) and checked value by value against four
 files from the model developers (\code{Parms.csv}, \code{Ung2009_NatOneWide.csv},
 \code{NatOneWide.csv}, \code{Fit.csv}) and against Tables 4 and 5 of the paper for
-black spruce, jack pine and trembling aspen. Nat2 parameters were also
+black spruce, jack pine and trembling aspen. Column names follow Table 4 of
+the paper (the developers' files use \code{v30}-\code{v32} for \code{v1}-\code{v3} and
+\code{v10}-\code{v22} for \code{b0}-\code{b5}). Nat2 parameters were also
 checked against sheet \code{V} of the developers' spreadsheet (all 25 species
 identical). The height (H) and basal-area (G) sheets of that spreadsheet hold
 slightly different, unpublished estimates from fitting each equation on its
 own; they are \strong{not} used here.
-}
-\details{
-\strong{Rounding.} All parameters were published with only 4 decimal places (a few
-large values with 4 significant digits), and the unrounded estimates are not
-available. This rounding alone makes predicted volume uncertain by a few
-percent; see \emph{Parameters are rounded} in \link{ung_models} and
-the uncertainty interval of \code{\link[=ung_yield_table]{ung_yield_table()}}.
 }
 \keyword{datasets}

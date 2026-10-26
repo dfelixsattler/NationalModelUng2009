@@ -5,17 +5,13 @@
 #' (`Ung_stand_volume_function.R`) and checked value by value against four
 #' files from the model developers (`Parms.csv`, `Ung2009_NatOneWide.csv`,
 #' `NatOneWide.csv`, `Fit.csv`) and against Tables 4 and 5 of the paper for
-#' black spruce, jack pine and trembling aspen. Nat2 parameters were also
+#' black spruce, jack pine and trembling aspen. Column names follow Table 4 of
+#' the paper (the developers' files use `v30`-`v32` for `v1`-`v3` and
+#' `v10`-`v22` for `b0`-`b5`). Nat2 parameters were also
 #' checked against sheet `V` of the developers' spreadsheet (all 25 species
 #' identical). The height (H) and basal-area (G) sheets of that spreadsheet hold
 #' slightly different, unpublished estimates from fitting each equation on its
 #' own; they are **not** used here.
-#'
-#' **Rounding.** All parameters were published with only 4 decimal places (a few
-#' large values with 4 significant digits), and the unrounded estimates are not
-#' available. This rounding alone makes predicted volume uncertain by a few
-#' percent; see *Parameters are rounded* in [ung_models] and
-#' the uncertainty interval of [ung_yield_table()].
 #'
 #' @format A data.frame with 25 rows and 26 columns:
 #' \describe{
@@ -23,11 +19,12 @@
 #'   \item{h10-h22}{Nat1 dominant height (H) parameters:
 #'     `h1 = h10 + h11 * dd0 + h12 * map`, `h2 = h20 + h21 * dd0 + h22 * map`.}
 #'   \item{g10-g22}{Nat1 basal area (G) parameters, same structure as `h`.}
-#'   \item{v30, v31, v32}{Nat1 volume parameters: intercept, and the
+#'   \item{v1, v2, v3}{Nat1 volume parameters: intercept, and the
 #'     coefficients of ln(H) and ln(G).}
 #'   \item{CDh, CDg, CDv}{Nat1 Duan correction factors (see *Duan correction
 #'     factor* in [ung_models]).}
-#'   \item{v10-v22}{Nat2 volume parameters, same structure as `h`.}
+#'   \item{b0-b5}{Nat2 volume parameters (beta0 to beta5 in the paper):
+#'     `ln(V) = (b0 + b1 * dd0 + b2 * map) + (b3 + b4 * dd0 + b5 * map) / age`.}
 #'   \item{CDv2}{Nat2 Duan correction factor.}
 #' }
 #' @source Ung, C.-H., Bernier, P.Y., Guo, X.J. and Lambert, M.-C. 2009.

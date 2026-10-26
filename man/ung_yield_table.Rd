@@ -10,11 +10,12 @@ ung_yield_table(
   dd0 = NULL,
   map = NULL,
   model = "Nat2",
-  ...,
   id = NULL,
   nat1_bias_correction = FALSE,
   include_hg = FALSE,
   uncertainty = FALSE,
+  sd_dd0 = NULL,
+  sd_map = NULL,
   seed = NULL,
   format = "long",
   warn = TRUE
@@ -36,15 +37,6 @@ predicts average volume directly; see \emph{Which model to use} in
 \link{ung_models}. One model per call; to compare both, run the function
 once for each and combine the results with \code{\link[=rbind]{rbind()}}.}
 
-\item{...}{Options for the uncertainty interval, used only when
-\code{uncertainty = TRUE} (see \emph{Uncertainty interval}): \code{n}, the number of
-simulations (default 1000); \code{interval}, the central probability of the
-interval (default 0.9); \code{sd_dd0} and \code{sd_map}, the standard deviation of
-\code{dd0} (degree-days) and \code{map} (mm), one value or one per curve (default:
-the species values in \link{ung_envelope}; 0 holds the variable fixed); \code{cor},
-the correlation between the \code{dd0} and \code{map} draws (default 0); and
-\code{rounding} (default \code{TRUE}). Arguments after \code{...} must be named in full.}
-
 \item{id}{Optional label for each curve, for example a stand ID: one value
 per element of \code{species}. The same label can be repeated, for example for
 a stand with two species. When given, it becomes the first column, \code{id},
@@ -61,6 +53,13 @@ the way to volume. Long format only. Default \code{FALSE}.}
 
 \item{uncertainty}{Logical. \code{TRUE} adds \code{lower} and \code{upper} columns (see
 \emph{Uncertainty interval}). Default \code{FALSE}.}
+
+\item{sd_dd0, sd_map}{Used only when \code{uncertainty = TRUE}. How much \code{dd0}
+(degree-days) and \code{map} (mm) vary in the simulations, as a standard
+deviation: one value, or one value per element of \code{species}. For example,
+\code{sd_dd0 = 100} if your \code{dd0} could be about 100 degree-days off. \code{0}
+keeps that variable fixed. Default \code{NULL}: the spread among the species'
+fitting plots (see \emph{Uncertainty interval}).}
 
 \item{seed}{Optional integer, used only when \code{uncertainty = TRUE}. The
 interval comes from random draws, so without a seed \code{lower} and \code{upper}
@@ -96,29 +95,23 @@ For several stands, give one value of \code{species}, \code{dd0}, \code{map} and
 \code{ung_yield_table(c("black spruce", "black spruce", "jack pine"), id = c("A", "B", "B"), dd0 = c(1800, 2200, 2200), map = c(600, 900, 900))}.
 
 A yield curve is a longer projection than the authors designed the models
-for, and volume is sensitive to climate and to the rounding of the
-parameters; see \link{ung_models} and run \code{\link[=ung_check]{ung_check()}} on the long table for
-details.
+for, and volume is sensitive to climate; see \link{ung_models} and run
+\code{\link[=ung_check]{ung_check()}} on the long table for details.
 }
 \section{Uncertainty interval}{
 
-With \code{uncertainty = TRUE}, the table gets \code{lower} and \code{upper} columns: the
-central 90 \% interval (by default) of many simulated volumes. Each
-simulation uses slightly different climate and slightly different
-parameters:
-\itemize{
-\item \strong{Climate.} \code{dd0} and \code{map} are drawn at random around the values you
-supplied. By default they vary as much as climate varies among the plots
-used to fit that species' model across Canada (\code{dd0_sd} and \code{map_sd} in
-\link{ung_envelope}), so the interval is wide. If you know how uncertain your
-own climate values are, set \code{sd_dd0} and \code{sd_map}.
-\item \strong{Rounding of the parameters.} The authors published every parameter
-with only 4 decimal places, and the unrounded values are not available.
-Each simulation picks every parameter at random within half a unit of its
-last printed digit (for example, 0.1234 becomes a value between 0.12335
-and 0.12345). Keep the default \code{rounding = TRUE}; \code{rounding = FALSE} only
-shows how much of the interval comes from climate alone.
-}
+With \code{uncertainty = TRUE}, the table gets \code{lower} and \code{upper} columns.
+The package predicts volume 1000 times, each time with \code{dd0} and \code{map}
+drawn at random around the values you supplied. \code{lower} and \code{upper} hold
+the middle 90 \% of these 1000 volumes.
+
+How much \code{dd0} and \code{map} vary is set by \code{sd_dd0} and \code{sd_map}. By
+default they vary as much as climate varies among all the plots used to fit
+that species' model across Canada (\code{dd0_sd} and \code{map_sd} in
+\link{ung_envelope}). The default interval is therefore wide: it shows how
+volume changes across the species' range, not how sure you can be about
+one stand. If you know how uncertain your own climate values are, set
+\code{sd_dd0} and \code{sd_map}.
 
 The interval does \strong{not} include the statistical uncertainty of the fitted
 parameters, or the variation of real stands around the model, so real

@@ -31,15 +31,9 @@ test_that("ung_uncertainty returns a reproducible, ordered fan", {
 
 test_that("zero SD collapses the fan; larger SD widens it; seed is restored", {
   z <- .ung_uncertainty("PINU.BAN", 80, 2200, 800, n = 50, sd_dd0 = 0, sd_map = 0,
-                       rounding = FALSE, seed = 2, warn = FALSE)
+                       seed = 2, warn = FALSE)
   expect_equal(z$lower, z$volume)
   expect_equal(z$upper, z$volume)
-  # Rounding alone gives a small but non-zero spread around the central value
-  r <- .ung_uncertainty("PINU.BAN", 80, 2200, 800, n = 500, sd_dd0 = 0, sd_map = 0,
-                       seed = 2, warn = FALSE)
-  expect_true(all(r$upper > r$lower))
-  expect_true(all(r$lower < r$volume & r$volume < r$upper))
-  expect_true(all((r$upper - r$lower) / r$volume < 0.5))
   narrow <- .ung_uncertainty("PINU.BAN", 80, 2200, 800, n = 500, sd_dd0 = 20, sd_map = 20,
                             seed = 2, warn = FALSE)
   wide <- .ung_uncertainty("PINU.BAN", 80, 2200, 800, n = 500, sd_dd0 = 200, sd_map = 200,
@@ -59,15 +53,13 @@ test_that("ung_uncertainty uses species-mean climate and SDs by default, and val
   expect_equal(f$sd_dd0, e$dd0_sd)
   expect_equal(f$sd_map, e$map_sd)
   expect_error(.ung_uncertainty("POPU.TRE", 60, n = 5), "`n`")
-  expect_error(.ung_uncertainty("POPU.TRE", 60, cor = 1), "`cor`")
-  expect_error(.ung_uncertainty("POPU.TRE", 60, interval = 1), "`interval`")
   expect_error(.ung_uncertainty("POPU.TRE", c(60, 70), sd_dd0 = c(1, 2, 3)), "`sd_dd0`")
   expect_error(.ung_uncertainty("POPU.TRE", 60, sd_map = -1), "`sd_map`")
 })
 
 test_that("plot() draws yield tables, with a band and with two models", {
   u <- ung_yield_table("PINU.BAN", age = seq(0, 100, by = 20), dd0 = 2100,
-                       map = 800, id = "S1", uncertainty = TRUE, n = 50,
+                       map = 800, id = "S1", uncertainty = TRUE,
                        seed = 1, warn = FALSE)
   n1 <- ung_yield_table("PINU.BAN", age = seq(0, 100, by = 20), dd0 = 2100,
                         map = 800, model = "Nat1", warn = FALSE)

@@ -15,12 +15,15 @@ the limitations. The predictions themselves are made with
 \item \strong{Nat1} first predicts dominant height \code{H} (m) and basal area \code{G}
 (m2/ha), then predicts volume from them:
 \code{ln(H) = h1 + h2 / age}, \code{ln(G) = g1 + g2 / age} and
-\code{ln(V) = v30 + v31 * ln(H) + v32 * ln(G)}. Each of \code{h1}, \code{h2}, \code{g1} and
+\code{ln(V) = v1 + v2 * ln(H) + v3 * ln(G)}. Each of \code{h1}, \code{h2}, \code{g1} and
 \code{g2} changes in a straight line with \code{dd0} and \code{map} (for example
 \code{h1 = h10 + h11 * dd0 + h12 * map}).
-\item \strong{Nat2} predicts volume directly: \code{ln(V) = v1 + v2 / age}, where \code{v1}
-and \code{v2} are again straight-line functions of \code{dd0} and \code{map}.
+\item \strong{Nat2} predicts volume directly:
+\code{ln(V) = (b0 + b1 * dd0 + b2 * map) + (b3 + b4 * dd0 + b5 * map) / age}.
 }
+
+Parameter names follow Table 4 of the paper (\code{b0} to \code{b5} are the
+paper's beta0 to beta5); the values are in \link{ung_parameters}.
 
 Volume is the gross volume of live merchantable trees, that is, trees with a
 diameter at breast height greater than 9 cm.
@@ -28,10 +31,9 @@ diameter at breast height greater than 9 cm.
 \section{Which model to use}{
 
 The choice is left to the user. \strong{Nat2} is the default of
-\code{\link[=ung_yield_table]{ung_yield_table()}} because it predicts average volume directly, and its
-parameters are less affected by rounding (see \emph{Parameters are rounded}).
-\strong{Nat1} also gives height and basal area (\code{include_hg = TRUE}), but its published volume is
-biased low (Nat2 is a median of about 20 \% higher). For this reason Nat1
+\code{\link[=ung_yield_table]{ung_yield_table()}} because it predicts average volume directly.
+\strong{Nat1} also gives height and basal area (\code{include_hg = TRUE}), but its
+published volume is biased low (Nat2 is a median of about 20 \% higher). For this reason Nat1
 has an optional bias correction; read \emph{Why Nat1 volume needs a correction}.
 }
 
@@ -95,7 +97,7 @@ logarithms of the reported height \code{H} and basal area \code{G}, which alread
 their Duan factors. This is how the authors fitted and wrote the system (in
 their file \verb{system equations.xls}) and is what the earlier R scripts do. It
 is important: using the corrected height and basal area instead would raise
-volume by \code{CDh^v31 * CDg^v32}, about a third for black spruce.
+volume by \code{CDh^v2 * CDg^v3}, about a third for black spruce.
 }
 
 \section{Why Nat1 volume needs a correction}{
@@ -110,8 +112,8 @@ distribution).
 size should reflect \emph{all} the scatter of \code{ln(V)} at a given age and
 climate.
 \item In Nat1, that scatter has three sources: the scatter of the volume
-equation itself, the error in predicted \code{ln(H)} (times \code{v31}) and the
-error in predicted \code{ln(G)} (times \code{v32}).
+equation itself, the error in predicted \code{ln(H)} (times \code{v2}) and the
+error in predicted \code{ln(G)} (times \code{v3}).
 \item Nat1's volume factor (\code{CDv}, about 1.001) was estimated with \emph{measured} H
 and G, where volume is almost exactly determined. It covers only the
 first source. The errors carried over from predicted H and G, mostly from
@@ -123,7 +125,7 @@ one residual already contains all the scatter, so its factor (\code{CDv2},
 \item For Nat1, the missing scatter can be estimated. Each Duan factor gives the
 variance of its log errors, about \code{2 * ln(CD)}. The extra variance that H
 and G add to \code{ln(V)} is then
-\code{s2 = v31^2 * 2 * ln(CDh) + v32^2 * 2 * ln(CDg)}, and a second-order
+\code{s2 = v2^2 * 2 * ln(CDh) + v3^2 * 2 * ln(CDg)}, and a second-order
 Taylor-series expansion gives the missing factor, about \code{1 + s2 / 2}.
 \code{nat1_bias_correction = TRUE} multiplies Nat1 volume by this factor, in
 addition to \code{CDv}.
@@ -149,22 +151,6 @@ hectare, not the volume per hectare of the median stand.
 package; it is not part of the published model, and it rests on the
 assumptions above. Nat2 does not need it. Height (\code{H}) and basal area
 (\code{G}) are not changed by it.
-}
-
-\section{Parameters are rounded to 4 decimal places}{
-
-The paper and every file supplied by the authors give the parameters to 4
-decimal places (a few large values to 4 significant digits). The unrounded
-values are not available, so the package uses the rounded ones. This
-matters because some coefficients are tiny and are multiplied by large
-climate values: \code{h11 = 0.0001} times \code{dd0 = 2000} adds 0.2 to \code{ln(H)},
-but the true \code{h11} could be anywhere from 0.00005 to 0.00015. When every
-coefficient is moved at random within its rounding interval, predicted
-volume at age 80 and each species' average climate varies by about 9 \%
-(standard deviation) for Nat1, from 4 \% to 16 \% depending on the species
-(tamarack is the worst), and by about 4 \% for Nat2 (at most 9 \%). This is
-in addition to every other source of uncertainty. The uncertainty interval
-of \code{\link[=ung_yield_table]{ung_yield_table()}} includes it by default (\code{rounding = TRUE}).
 }
 
 \section{Age 0}{
@@ -201,8 +187,8 @@ species' model (often a sign that the wrong degree-day variable was used);
 \item predicted volume or basal area is larger than in any fitting plot;
 \item Nat2 only: at this climate, Nat2 volume reaches half of its maximum before
 age 10 or does not rise with age at all. In Nat2,
-\code{ln(V) = v1 + v2 / age}, and the climate terms in \code{v2} can bring it close
-to zero (or above it) even inside the fitting climate, mainly for
+\code{b3 + b4 * dd0 + b5 * map} (the part divided by age) can be close to
+zero or above it, even inside the fitting climate, mainly for
 Douglas-fir, white spruce, subalpine fir, red pine and eastern white pine
 in dry places. Nat1 usually gives a normal rising curve there.
 }

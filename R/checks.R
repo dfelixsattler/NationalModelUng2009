@@ -133,7 +133,7 @@ ung_check <- function(x, rows = FALSE) {
   if ("V_Nat2" %in% names(out)) {
     p <- NationalModelUng2009::ung_parameters
     p <- p[match(out$species, p$species), , drop = FALSE]
-    b <- p$v20 + p$v21 * out$dd0 + p$v22 * out$map
+    b <- p$b3 + p$b4 * out$dd0 + p$b5 * out$map
     f$curve_not_rising <- age > 0 & b > -log(2) * .young_age
   }
 
